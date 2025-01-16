@@ -21,9 +21,9 @@ const TabItem = ({isFocused,onPress,label,onLongPress}) => {
 }
  if (label === 'Search') {
   return isFocused?(
-   <Icon name="search" size={70} color ="black"/>
+   <Icon name="search" size={60} color ="black"/>
 ):(
-<Icon name="search" size={65} color ="gray"/>
+<Icon name="search" size={55} color ="gray"/>
 );
      }
      if (label === 'Chat') {
@@ -45,13 +45,10 @@ const TabItem = ({isFocused,onPress,label,onLongPress}) => {
   
     return (
       <>
-    <View style={{flexDirection: 'column', justifyContent: 'center', alignItems:'center'}}>
-    <TouchableOpacity onPress={onPress} onLongPress={onLongPress} style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
+    <View style={{flexDirection: 'column', justifyContent: 'center', alignItems:'center', flex: 'center'}}>
+    <TouchableOpacity onPress={onPress} onLongPress={onLongPress} style={{flexDirection: 'row', alignItems: 'center'}}>
                 <Tombol />
               </TouchableOpacity>
-              <Text>
-                {label}
-                </Text>
                 </View>
               </>
   )

@@ -1,30 +1,32 @@
-import { View, Text } from 'react-native'
+import { View, Text, Button, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import Splash from '../button/Splash';
-import { createBottomStackNavigator } from '@react-navigation/bottom-stack';
+import { createNativeStackNavigator} from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, Maps, Search, Chat, Profil } from '../button';
 import BottomNav from '../components/BottomNav';
-const Stack = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const Router = () => {
+const MainApp = () => {
     return (
     <Tab.Navigator tabBar={props => <BottomNav {...props}/>}>
-        <Tab.Screen name="Home" component={Home} options={{ headerShown: false}} />
-        <Tab.Screen name="Maps" component={Maps} options={{ headerShown: false}} />
-        <Tab.Screen name="Search" component={Search} options={{ headerShown: false}} />
-        <Tab.Screen name="Chat" component={Chat} options={{ headerShown: false}} />
-        <Tab.Screen name="Profil" component={Profil} options={{ headerShown: false}} />
+        <Tab.Screen name="Home" component={Home} options={{ headerLeft: () => ( 
+         <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
+        ), headerTitle:''}}/>
+        <Tab.Screen name="Maps" component={Maps}/> 
+        <Tab.Screen name="Search" component={Search} />
+        <Tab.Screen name="Chat" component={Chat}/>
+        <Tab.Screen name="Profil" component={Profil} />
     </Tab.Navigator>
     );
 };
-/*const Router = () => {
+const Router = () => {
   return (
-    <Stack.Navigator initialRouteName="MainApp">
-        <Stack.Screen name="Main" component={MainApp} options={{ headerShown: false}}/>
+    <Stack.Navigator initialRouteName="Splash">
+        <Stack.Screen name="mainApp" component={MainApp} options={{ headerShown: false}}/>
         <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false}}/>
     </Stack.Navigator>
   );
-};*/
+};
 
-export default Router
+export default Router;

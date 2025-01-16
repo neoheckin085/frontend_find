@@ -10,8 +10,8 @@ const BottomNav = ({state, descriptors, navigation}) => {
     const { buildHref } = useLinkBuilder();
   
     return (
-    <View>
-       <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 'auto'}}>
+    <View style={{flexDirection: 'column', borderWidth:1, borderRadius: 50, marginHorizontal: 30, minHeight: 80, alignContent: 'center'}}>
+       <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 'auto', marginHorizontal: 30, flex: 1}}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
