@@ -1,89 +1,153 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, Modal, Button } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import Gambar from '../assets/IkasiMakassar.png';
 import Gambar2 from '../assets/TlCavalary.png';
 import Gambar3 from '../assets/PsmFans.png';
-import Logo2 from '../assets/logoliquid.jpg'
+import Logo2 from '../assets/logoliquid.jpg';
 
 const Home = () => {
+  const [liked, setLiked] = useState([false, false, false]);
+  const [comments, setComments] = useState([[], [], []]); // Array of comments for each post
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currentPost, setCurrentPost] = useState(null); // Track the current post for commenting
+  const [newComment, setNewComment] = useState('');
+
+  const toggleLike = (index) => {
+    const updatedLiked = [...liked];
+    updatedLiked[index] = !updatedLiked[index];
+    setLiked(updatedLiked);
+  };
+
+  const handleCommentPress = (index) => {
+    setCurrentPost(index);
+    setModalVisible(true);
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim() !== '') {
+      const updatedComments = [...comments];
+      updatedComments[currentPost].push(newComment.trim());
+      setComments(updatedComments);
+      setNewComment('');
+      setModalVisible(false);
+    }
+  };
+
+  const Card = ({ image, logo, title, description, index }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Image style={styles.logo} source={logo} />
+        <Text style={styles.judul}>{title}</Text>
+      </View>
+      <Image style={styles.gambar} source={image} />
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => toggleLike(index)}
+        >
+          <Icon
+            name="heart"
+            size={20}
+            color={liked[index] ? '#e74c3c' : '#bdc3c7'}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleCommentPress(index)}
+        >
+          <Icon name="comment" size={20} color="#333" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardDescription}>
+          <Text style={styles.cardTittle}>{title}</Text> - {description}
+        </Text>
+        {comments[index].length > 0 && (
+          <View style={styles.commentSection}>
+            {comments[index].map((comment, i) => (
+              <Text key={i} style={styles.comment}>
+                {comment}
+              </Text>
+            ))}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
   return (
     <ScrollView style={{ flex: 1 }}>
-      <View style={styles.judulContainer}>
-        <Image style={styles.logo} source={Gambar} />
-        <Text style={styles.judul}>IkasiMakassar</Text>
-      </View>
-      <View style={styles.card}>
-        <Image style={styles.gambar} source={Gambar} />
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTittle}>IkasiMakassar</Text>
-          <Text style={styles.cardDescription}>
-            Sebagai salah satu dari Sebelas Fatui Harbinger , Arlecchino sangat
-            menghormati Tsaritsa , meskipun dia menyatakan bahwa dia bersedia
-            mengkhianati Tsaritsa jika kepentingan mereka berbeda. Arlecchino
-            bekerja untuk mencapai tujuannya dengan memperoleh Gnose atas
-            namanya. Dia menangani masalah Fatui dengan sangat penting dan
-            tampil anggun dan ramah.
-          </Text>
-        </View>
-      </View>
-      <View style={styles.judulContainer}>
-        <Image style={styles.logo} source={Logo2} />
-        <Text style={styles.judul}>TlCavalary</Text>
-      </View>
-      <View style={styles.card}>
-        <Image style={styles.gambar} source={Gambar2} />
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTittle}>Arlechino</Text>
-          <Text style={styles.cardDescription}>
-            Sebagai salah satu dari Sebelas Fatui Harbinger , Arlecchino sangat
-            menghormati Tsaritsa , meskipun dia menyatakan bahwa dia bersedia
-            mengkhianati Tsaritsa jika kepentingan mereka berbeda. Arlecchino
-            bekerja untuk mencapai tujuannya dengan memperoleh Gnose atas
-            namanya. Dia menangani masalah Fatui dengan sangat penting dan
-            tampil anggun dan ramah.
-          </Text>
-        </View>
-      </View>
-      <View style={styles.judulContainer}>
-        <Image style={styles.logo} source={Gambar3} />
-        <Text style={styles.judul}>PsmFans</Text>
-      </View>
-      <View style={styles.card}>
-        <Image style={styles.gambar} source={Gambar3} />
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTittle}>Psm Fans</Text>
-          <Text style={styles.cardDescription}>
-            Sebagai salah satu dari Sebelas Fatui Harbinger , Arlecchino sangat
-            menghormati Tsaritsa , meskipun dia menyatakan bahwa dia bersedia
-            mengkhianati Tsaritsa jika kepentingan mereka berbeda. Arlecchino
-            bekerja untuk mencapai tujuannya dengan memperoleh Gnose atas
-            namanya. Dia menangani masalah Fatui dengan sangat penting dan
-            tampil anggun dan ramah.
-          </Text>
-        </View>
-      </View>
+      {modalVisible && (
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add Comment</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Type your comment here..."
+                value={newComment}
+                onChangeText={setNewComment}
+              />
+              <View style={styles.modalButtons}>
+                <Button title="Cancel" onPress={() => setModalVisible(false)} />
+                <Button title="Add" onPress={handleAddComment} />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+      <Card
+        image={Gambar}
+        logo={Gambar}
+        title="IkasiMakassar"
+        description="Sebagai salah satu dari Sebelas Fatui Harbinger, Arlecchino sangat menghormati Tsaritsa, meskipun dia menyatakan bahwa dia bersedia mengkhianati Tsaritsa jika kepentingan mereka berbeda. Arlecchino bekerja untuk mencapai tujuannya dengan memperoleh Gnose atas namanya. Dia menangani masalah Fatui dengan sangat penting dan tampil anggun dan ramah."
+        index={0}
+      />
+      <Card
+        image={Gambar2}
+        logo={Logo2}
+        title="TlCavalary"
+        description="Sebagai salah satu dari Sebelas Fatui Harbinger, Arlecchino sangat menghormati Tsaritsa, meskipun dia menyatakan bahwa dia bersedia mengkhianati Tsaritsa jika kepentingan mereka berbeda. Arlecchino bekerja untuk mencapai tujuannya dengan memperoleh Gnose atas namanya. Dia menangani masalah Fatui dengan sangat penting dan tampil anggun dan ramah."
+        index={1}
+      />
+      <Card
+        image={Gambar3}
+        logo={Gambar3}
+        title="Psm Fans"
+        description="Sebagai salah satu dari Sebelas Fatui Harbinger, Arlecchino sangat menghormati Tsaritsa, meskipun dia menyatakan bahwa dia bersedia mengkhianati Tsaritsa jika kepentingan mereka berbeda. Arlecchino bekerja untuk mencapai tujuannya dengan memperoleh Gnose atas namanya. Dia menangani masalah Fatui dengan sangat penting dan tampil anggun dan ramah."
+        index={2}
+      />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  judulContainer: {
+  cardTittle: {
+    fontWeight: 'bold',
+  },
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginTop: 18,
+    padding: 10,
   },
   logo: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     borderRadius: 50,
-    marginRight: 15
+    marginRight: 10,
   },
   judul: {
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'left',
-    marginTop: 1,
+    marginTop: 2,
   },
   card: {
     margin: 3,
@@ -97,21 +161,63 @@ const styles = StyleSheet.create({
   },
   gambar: {
     width: '100%',
-    height: 400,
+    height: 450,
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
   },
   cardBody: {
-    padding: 10,
-  },
-  cardTittle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    padding: 15,
   },
   cardDescription: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+  },
+  actionButton: {
+    marginRight: 20,
+  },
+  commentSection: {
+    marginTop: 10,
+  },
+  comment: {
     fontSize: 14,
-    color: '#666',
+    color: '#555',
+    marginBottom: 5,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
   },
 });
 
