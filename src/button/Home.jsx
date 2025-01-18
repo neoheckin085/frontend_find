@@ -12,6 +12,7 @@ const Home = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentPost, setCurrentPost] = useState(null); // Track the current post for commenting
   const [newComment, setNewComment] = useState('');
+  const [showLikeIcon, setShowLikeIcon] = useState([false, false, false]);
 
   const toggleLike = (index) => {
     const updatedLiked = [...liked];
@@ -34,13 +35,34 @@ const Home = () => {
     }
   };
 
+  const handleDoubleTap = (index) => {
+    toggleLike(index);
+    const updatedShowLikeIcon = [...showLikeIcon];
+    updatedShowLikeIcon[index] = true;
+    setShowLikeIcon(updatedShowLikeIcon);
+    setTimeout(() => {
+      updatedShowLikeIcon[index] = false;
+      setShowLikeIcon([...updatedShowLikeIcon]);
+    }, 1000); // Like icon will disappear after 1 second
+  };
+
   const Card = ({ image, logo, title, description, index }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Image style={styles.logo} source={logo} />
         <Text style={styles.judul}>{title}</Text>
       </View>
-      <Image style={styles.gambar} source={image} />
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => handleDoubleTap(index)}
+      >
+        <Image style={styles.gambar} source={image} />
+        {showLikeIcon[index] && (
+          <View style={styles.likeIconContainer}>
+            <Icon name="heart" size={60} color="#e74c3c" />
+          </View>
+        )}
+      </TouchableOpacity>
       <View style={styles.cardActions}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -48,7 +70,7 @@ const Home = () => {
         >
           <Icon
             name="heart"
-            size={20}
+            size={30} // Increased size of the like icon
             color={liked[index] ? '#e74c3c' : '#bdc3c7'}
           />
         </TouchableOpacity>
@@ -56,7 +78,7 @@ const Home = () => {
           style={styles.actionButton}
           onPress={() => handleCommentPress(index)}
         >
-          <Icon name="comment" size={20} color="#333" />
+          <Icon name="comment" size={30} color="#333" /> {/* Increased size of the comment icon */}
         </TouchableOpacity>
       </View>
       <View style={styles.cardBody}>
@@ -165,6 +187,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
   },
+  likeIconContainer: {
+    position: 'absolute',
+    top: '40%',
+    left: '45%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   cardBody: {
     padding: 15,
   },
@@ -202,22 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    fontSize: 10
   },
 });
 
