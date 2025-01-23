@@ -18,7 +18,7 @@ const MainApp = () => {
         component={Home} 
         options={{
           headerLeft: () => (
-            <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
+            <Image source={require('../assets/F!ND.png')} style={{ width: 60, height: 60, resizeMode: 'contain'}}/>
           ),
           headerTitle: 'F1ND',
           headerRight: () => (
@@ -33,7 +33,7 @@ const MainApp = () => {
         component={Maps} 
         options={{
           headerLeft: () => (
-            <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
+            <Image source={require('../assets/F!ND.png')} style={{ width: 60, height: 60, resizeMode: 'contain'}}/>
           ),
           headerTitle: '',
           headerRight: () => (
@@ -48,7 +48,7 @@ const MainApp = () => {
         component={Search} 
         options={{
           headerLeft: () => (
-            <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
+            <Image source={require('../assets/F!ND.png')} style={{ width: 60, height: 60, resizeMode: 'contain'}}/>
           ),
           headerTitle: '',
           headerRight: () => (
@@ -63,9 +63,9 @@ const MainApp = () => {
         component={Chat} 
         options={{
           headerLeft: () => (
-            <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
+            <Image source={require('../assets/F!ND.png')} style={{ width: 60, height: 60, resizeMode: 'contain'}}/>
           ),
-          headerTitle: '',
+          headerTitle: '  Pesan',
           headerRight: () => (
             <TouchableOpacity onPress={() => console.log("More options pressed")}>
               <Icon name="ellipsis-v" size={24} color="#333" style={{ marginRight: 10 }} />
@@ -78,7 +78,7 @@ const MainApp = () => {
         component={Profil} 
         options={{
           headerLeft: () => (
-            <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
+            <Image source={require('../assets/F!ND.png')} style={{ width: 60, height: 60, resizeMode: 'contain'}}/>
           ),
           headerTitle: '',
           headerRight: () => (
