@@ -36,7 +36,9 @@ const Home = () => {
   };
 
   const handleDoubleTap = (index) => {
-    toggleLike(index);
+    if (!liked[index]) {
+      toggleLike(index);
+    }
     const updatedShowLikeIcon = [...showLikeIcon];
     updatedShowLikeIcon[index] = true;
     setShowLikeIcon(updatedShowLikeIcon);
@@ -45,6 +47,7 @@ const Home = () => {
       setShowLikeIcon([...updatedShowLikeIcon]);
     }, 1000); // Like icon will disappear after 1 second
   };
+  
 
   const Card = ({ image, logo, title, description, index }) => (
     <View style={styles.card}>

@@ -80,6 +80,7 @@ const MainApp = () => {
           headerLeft: () => (
             <Image source={require('../assets/Find.png')} style={{ width: 100, height: 120, resizeMode: 'contain'}}/>
           ),
+          headerTitle: '',
           headerRight: () => (
             <TouchableOpacity onPress={() => console.log("More options pressed")}>
               <Icon name="ellipsis-v" size={24} color="#333" style={{ marginRight: 10 }} />
