@@ -3,14 +3,13 @@ import { View, Text, StatusBar, Image, TouchableOpacity, ImageBackground } from 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Logokecil from '../assets/Favian.png'
 import babelConfig from '../../babel.config';
+import Logobesar from '../assets/makassar.jpg'
 
 const Profil = () => {
   return (
     <View style={{flex: 1}}>
     <StatusBar barStyle={'light-content'} backgroundColor="#212121"/>
-    <ImageBackground source={{
-      uri: 'https://media.istockphoto.com/id/2152685855/id/foto/masjid-megah-dan-matahari-terbenam.jpg?s=1024x1024&w=is&k=20&c=1W3KUYBVn8WRdwm6xRx8TvnUxvbNL4wQmtjM1i79Dx8='
-    }}
+    <ImageBackground source={Logobesar} 
     style={{flex: 0.5, opacity: 0.9}}
     resizeMode={'cover'}>
      <View style={{flex: 0.5}}>

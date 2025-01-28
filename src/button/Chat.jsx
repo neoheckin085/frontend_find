@@ -4,15 +4,23 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 const messages = [
-  { id: '1', name: 'psmfans1915', message: "Eqi mengirimkan pesan", avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s', isUnread: true, allMessages: ['Halo', 'Apa kabar?'] },
+  { id: '1', name: 'psmfans1915', message: 'Eqi: adakah nobar', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s', isUnread: true, allMessages: ['Halo', 'Apa kabar?'] },
   { id: '2', name: 'ikasikotamakassar', message: 'La besse: Bagaimanaji pertan...', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJJHyC-tE-Z5VyPjHNDoFrrgyebKVyhpLC3w&s', isUnread: false, allMessages: ['Selamat pagi', 'Ada kabar apa?'] },
-  { id: '3', name: 'makassar.pubg', message: 'Jeki: adakah mabar', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXy4SLmx0FwY_wnUTrTpLzuebOTroiHJ0bpw&s', isUnread: true, allMessages: ['Main bareng yuk', 'Jam berapa?'] },
-  { id: '4', name: 'christyzer.ofc', message: 'Rifat sedang mengetik...', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIrTUnK8DR0Rn8kBNoPcaSgAwM1UzzHGQpaw&s', isUnread: false, allMessages: ['Lagi sibuk apa?', 'Nanti ngobrol yuk!'] },
+  { id: '3', name: 'makassar.pubg', message: 'Jeki: infokan permabaran', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXy4SLmx0FwY_wnUTrTpLzuebOTroiHJ0bpw&s', isUnread: true, allMessages: ['Main bareng yuk', 'Jam berapa?'] },
+  { id: '4', name: 'christyzer.ofc', message: 'Rifat: adakah event JKT48', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIrTUnK8DR0Rn8kBNoPcaSgAwM1UzzHGQpaw&s', isUnread: false, allMessages: ['Lagi sibuk apa?', 'Nanti ngobrol yuk!'] },
 ];
 
 const ChatList = ({ navigation }) => {
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Messages', { name: item.name, allMessages: item.allMessages })}>
+    <TouchableOpacity
+  onPress={() =>
+    navigation.navigate('Messages', {
+      name: item.name,
+      message: item.message, // Pesan terakhir yang terlihat di luar
+      allMessages: item.allMessages,
+    })
+  }
+>
       <View style={styles.chatItem}>
         <Image source={{ uri: item.avatar }} style={styles.avatar} />
         <View style={styles.chatInfo}>
@@ -40,7 +48,10 @@ const ChatList = ({ navigation }) => {
 };
 
 const Messages = ({ route }) => {
-  const { name, allMessages } = route.params;
+  const { name, message, allMessages } = route.params;
+
+  // Gabungkan pesan terakhir (dari luar) ke bagian bawah daftar pesan
+  const updatedMessages = [...allMessages, message];
 
   return (
     <View style={styles.container}>
@@ -48,7 +59,7 @@ const Messages = ({ route }) => {
         <Text style={styles.headerTitle}>{name}</Text>
       </View>
       <FlatList
-        data={allMessages}
+        data={updatedMessages}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.chatBubble}>
