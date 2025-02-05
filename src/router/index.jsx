@@ -8,6 +8,9 @@ import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Mengikuti from '../components/Mengikuti';
 import EditProfil from '../components/EditProfil';
+import Login from '../pages/Login';
+import CreateAccount from '../pages/CreateAccount';
+import Find from '../Find';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -170,9 +173,12 @@ const MainApp = ({ navigation }) => {
 
 const Router = () => {
   return (
-    <Stack.Navigator initialRouteName="Splash">
+    <Stack.Navigator initialRouteName="Find">
       <Stack.Screen name="mainApp" component={MainApp} options={{ headerShown: false }} />
       <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+      <Stack.Screen name="Find" component={Find} options={{ headerShown: false }} />
+      <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
       <Stack.Screen
         name="Mengikuti"
         component={Mengikuti}

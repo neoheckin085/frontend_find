@@ -1,7 +1,12 @@
 import { View, Text, ImageBackground, Image } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 
-const Find = () => {
+const Find = ({ navigation }) => {
+    useEffect(() => {
+        setTimeout(() => {
+          navigation.replace('Login');
+        }, 5000);
+      }, [navigation]);
     return (
         <ImageBackground 
             source={require('./assets/Background.png')} // Path ke gambar background
