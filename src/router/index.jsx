@@ -1,4 +1,4 @@
-import { View, Text, Button, Image, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, Button, Image, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
 import React, { useState } from 'react';
 import Splash from '../button/Splash';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import EditProfil from '../components/EditProfil';
 import Login from '../pages/Login';
 import CreateAccount from '../pages/CreateAccount';
 import Find from '../Find';
+import { useAuth } from '../../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -18,6 +19,7 @@ const Tab = createBottomTabNavigator();
 const MainApp = ({ navigation }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isProfileModalVisible, setProfileModalVisible] = useState(false);
+  const {user, token, logout} = useAuth(); // Tambahkan fungsi logout
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
@@ -35,9 +37,19 @@ const MainApp = ({ navigation }) => {
     navigation.navigate('EditProfil');
   };
 
+  const handleLogout = () => {
+    closeProfileModal();
+    logout(navigation);
+  };
+
+  React.useEffect(() => {
+      if (!token || !user) {
+        navigation.navigate('Login');
+      }
+    }, [token, user, navigation]);
   return (
     <>
-      <Tab.Navigator tabBar={(props) => <BottomNav {...props} />}> 
+      <Tab.Navigator tabBar={(props) => <BottomNav {...props} />}>
         <Tab.Screen
           name="Home"
           component={Home}
@@ -50,79 +62,20 @@ const MainApp = ({ navigation }) => {
             ),
             headerTitle: 'F1ND',
             headerRight: () => (
-              <TouchableOpacity
-                onPress={openModal}
-                style={styles.iconContainer}>
+              <TouchableOpacity onPress={openModal} style={styles.iconContainer}>
                 <Icon name="ellipsis-v" size={24} color="#333" />
               </TouchableOpacity>
             ),
           }}
         />
-        <Tab.Screen
-          name="Maps"
-          component={Maps}
-          options={{
-            headerLeft: () => (
-              <Image
-                source={require('../assets/F!ND.png')}
-                style={{ width: 60, height: 60, resizeMode: 'contain' }}
-              />
-            ),
-            headerTitle: '',
-            headerRight: () => (
-              <TouchableOpacity onPress={() => console.log("More options pressed")} style={styles.iconContainer}>
-                <Icon name="ellipsis-v" size={24} color="#333" />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Search"
-          component={Search}
-          options={{
-            headerLeft: () => (
-              <Image
-                source={require('../assets/F!ND.png')}
-                style={{ width: 60, height: 60, resizeMode: 'contain' }}
-              />
-            ),
-            headerTitle: '',
-            headerRight: () => (
-              <TouchableOpacity onPress={() => console.log("More options pressed")} style={styles.iconContainer}>
-                <Icon name="ellipsis-v" size={24} color="#333" />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Chat"
-          component={Chat}
-          options={{
-            headerLeft: () => (
-              <Image
-                source={require('../assets/F!ND.png')}
-                style={{ width: 60, height: 60, resizeMode: 'contain' }}
-              />
-            ),
-            headerTitle: '  Pesan',
-            headerRight: () => (
-              <TouchableOpacity onPress={() => console.log("More options pressed")} style={styles.iconContainer}>
-                <Icon name="ellipsis-v" size={24} color="#333" />
-              </TouchableOpacity>
-            ),
-          }}
-        />
+        <Tab.Screen name="Maps" component={Maps} options={{ headerTitle: 'Maps' }} />
+        <Tab.Screen name="Search" component={Search} options={{ headerTitle: 'Search' }} />
+        <Tab.Screen name="Chat" component={Chat} options={{ headerTitle: 'Pesan' }} />
         <Tab.Screen
           name="Profil"
           component={Profil}
           options={{
-            headerLeft: () => (
-              <Image
-                source={require('../assets/F!ND.png')}
-                style={{ width: 60, height: 60, resizeMode: 'contain' }}
-              />
-            ),
-            headerTitle: '',
+            headerTitle: 'Profil',
             headerRight: () => (
               <TouchableOpacity onPress={openProfileModal} style={styles.iconContainer}>
                 <Icon name="ellipsis-v" size={24} color="#333" />
@@ -132,13 +85,11 @@ const MainApp = ({ navigation }) => {
         />
       </Tab.Navigator>
 
-      {/* Modal for Options */}
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeModal}>
-        <View style={styles.modalOverlay}>
+      {/* Modal untuk opsi umum */}
+      <Modal visible={isModalVisible} transparent={true} animationType="fade" onRequestClose={closeModal}>
+        <TouchableWithoutFeedback onPress={closeModal} accessible={false}>
+        <View style={styles.modalOverlay} >
+          <TouchableWithoutFeedback>
           <View style={styles.modalTopContentRight}>
             <TouchableOpacity onPress={handleNavigateToMengikuti}>
               <Text style={styles.modalOption}>Mengikuti</Text>
@@ -147,21 +98,22 @@ const MainApp = ({ navigation }) => {
               <Text style={styles.modalCancel}>Batal</Text>
             </TouchableOpacity>
           </View>
+          </TouchableWithoutFeedback>
         </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Modal for Profile Options */}
-      <Modal
-        visible={isProfileModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeProfileModal}>
+      {/* Modal untuk profil */}
+      <Modal visible={isProfileModalVisible} transparent={true} animationType="fade" onRequestClose={closeProfileModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalTopContentRight}>
-            <TouchableOpacity onPress={handleNavigateToEditProfil}>
+            <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={handleNavigateToEditProfil}>
               <Text style={styles.modalOption}>Edit Profil</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={closeProfileModal}>
+            <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={handleLogout}>
+              <Text style={styles.modalOption}>Keluar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={closeProfileModal}>
               <Text style={styles.modalCancel}>Batal</Text>
             </TouchableOpacity>
           </View>
@@ -172,34 +124,27 @@ const MainApp = ({ navigation }) => {
 };
 
 const Router = () => {
+  const { user, token, loading } = useAuth();
+  if (loading) {
+    return null;
+  }
   return (
-    <Stack.Navigator initialRouteName="Find">
+    <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'Find'}>
       <Stack.Screen name="mainApp" component={MainApp} options={{ headerShown: false }} />
       <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
       <Stack.Screen name="Find" component={Find} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
-      <Stack.Screen
-        name="Mengikuti"
-        component={Mengikuti}
-        options={{
-          headerTitle: 'Postingan yang Diikuti',
-        }}
-      />
-      <Stack.Screen
-        name="EditProfil"
-        component={EditProfil}
-        options={{
-          headerTitle: 'Edit Profil',
-        }}
-      />
+      <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Postingan yang Diikuti' }} />
+      <Stack.Screen name="EditProfil" component={EditProfil} options={{ headerTitle: 'Edit Profil' }} />
     </Stack.Navigator>
   );
 };
 
 const styles = StyleSheet.create({
   iconContainer: {
-    marginRight: 15,
+    marginRight: 25,
+    size: 36,
   },
   modalOverlay: {
     flex: 1,
@@ -209,17 +154,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 10,
-    width: 150,
+    width: 200,
     padding: 8,
+    flexDirection: 'column',
     backgroundColor: '#fff',
     borderRadius: 4,
-    alignItems: 'flex-start',
+    alignContent: 'center',
     elevation: 5,
   },
   modalOption: {
     fontSize: 16,
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   modalCancel: {
     fontSize: 14,

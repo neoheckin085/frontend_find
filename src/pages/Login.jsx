@@ -5,16 +5,22 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  ScrollView,
   StyleSheet,
   ImageBackground, KeyboardAvoidingView
 } from 'react-native';
 import { create } from 'react-test-renderer';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const {logs,error,token,user} = useAuth();
   const [pressed, setPressed] = useState(false);
   const [createPress, setCreatePressed] = useState(false);
+  const handleLogin = () => {
+    logs(email, password, navigation);
+  };
   useEffect(() => {
     if (pressed) {
       navigation.replace('mainApp');
@@ -22,20 +28,24 @@ const Login = ({ navigation }) => {
     if (createPress) {
       navigation.replace('Register');
     }
-  }, [pressed, createPress, navigation]);
+    if (token && user) {
+      navigation.navigate('mainApp');
+    }
+  }, [pressed, createPress, token, user, navigation]);
   
 
   return (
+    
     <KeyboardAvoidingView style={styles.container} behavior='padding'>
       {/* Background Image */}
       <ImageBackground
-        source={require('../assets/Background.png')} // Ganti dengan gambar background Anda
+        source={require('../assets/Background.png')} 
         style={styles.background}
       >
         {/* Logo */}
         <KeyboardAvoidingView style={styles.logoContainer}>
           <Image
-            source={require('../assets/Find.png')} // Ganti dengan gambar logo Anda
+            source={require('../assets/Find.png')} 
             style={styles.logo}
           />
         </KeyboardAvoidingView>
@@ -49,23 +59,27 @@ const Login = ({ navigation }) => {
             placeholder="Email"
             placeholderTextColor="#000"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={text => setEmail(text)}
             keyboardType="email-address"
             style={styles.input}
+            error={error.email}
           />
+          {error.email && <Text style={{color: 'red'}}>{error.email[0]}</Text>}
 
           {/* Input Password */}
           <TextInput
             placeholder="Password"
             placeholderTextColor="#000"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={text => setPassword(text)}
             secureTextEntry
             style={styles.input}
+            error={error.password}
           />
+          {error.password && <Text style={{color: 'red'}}>{error.password[0]}</Text>}
 
           {/* Tombol Login */}
-          <TouchableOpacity style={styles.loginButton} onPress={() => setPressed(true)}>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
 
@@ -86,7 +100,7 @@ const Login = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex:2,
   },
   background: {
     flex: 1,
@@ -97,7 +111,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logo: {
-    width: 250, // Sesuaikan dengan ukuran logo
+    width: 250, 
     height: 250,
   },
   loginContainer: {
