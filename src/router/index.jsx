@@ -11,6 +11,11 @@ import EditProfil from '../components/EditProfil';
 import Login from '../pages/Login';
 import CreateAccount from '../pages/CreateAccount';
 import Find from '../Find';
+import Forget from '../components/ForgetPassword/Email'
+import Phone from '../components/ForgetPassword/Telepon'
+import Verif1 from '../components/ForgetPassword/VerifEmail'
+import Verif2 from '../components/ForgetPassword/VerifTelepon'
+import NewPassword from '../components/ForgetPassword/NewPassword';
 import { useAuth } from '../../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -137,6 +142,11 @@ const Router = () => {
       <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
       <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Postingan yang Diikuti' }} />
       <Stack.Screen name="EditProfil" component={EditProfil} options={{ headerTitle: 'Edit Profil' }} />
+      <Stack.Screen name="SearchAccount" component={Forget} options={{ headerShown: false}} />
+      <Stack.Screen name="Telepon" component={Phone} options={{ headerShown: false}} />
+      <Stack.Screen name="VerifEmail" component={Verif1} options={{ headerShown: false}} />
+      <Stack.Screen name="VerifTelepon" component={Verif2} options={{ headerShown: false}} />
+      <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false}} />
     </Stack.Navigator>
   );
 };
