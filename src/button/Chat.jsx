@@ -82,7 +82,7 @@ const Stack = createStackNavigator();
 const App = () => {
   return (
       <Stack.Navigator>
-        <Stack.Screen name="ChatList" component={ChatList} options={{ title: "Daftar Grup" }} />
+        <Stack.Screen name="ChatList" component={ChatList} options={{ title: "Daftar Komunitas" }} />
         <Stack.Screen name="Messages" component={Messages} />
       </Stack.Navigator>
   );

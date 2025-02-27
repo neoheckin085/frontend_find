@@ -1,9 +1,10 @@
 import { View, Text, Button, Image, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState,  useEffect } from 'react';
 import Splash from '../button/Splash';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, Maps, Search, Chat, Profil } from '../button';
+import Komen from '../components/komen';
 import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Mengikuti from '../components/Mengikuti';
@@ -41,6 +42,9 @@ const MainApp = ({ navigation }) => {
     closeProfileModal();
     navigation.navigate('EditProfil');
   };
+  const AppNavigator = () => {
+    const { token } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = () => {
     closeProfileModal();
@@ -134,7 +138,7 @@ const Router = () => {
     return null;
   }
   return (
-    <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'Find'}>
+    <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'mainApp'}>
       <Stack.Screen name="mainApp" component={MainApp} options={{ headerShown: false }} />
       <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
@@ -147,6 +151,7 @@ const Router = () => {
       <Stack.Screen name="VerifEmail" component={Verif1} options={{ headerShown: false}} />
       <Stack.Screen name="VerifTelepon" component={Verif2} options={{ headerShown: false}} />
       <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false}} />
+      <Stack.Screen name="Comment" component={Komen} options={{ headerShown: false}} />
     </Stack.Navigator>
   );
 };
@@ -181,6 +186,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'red',
   },
-});
+})};
 
 export default Router;
