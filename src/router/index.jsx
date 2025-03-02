@@ -42,20 +42,17 @@ const MainApp = ({ navigation }) => {
     closeProfileModal();
     navigation.navigate('EditProfil');
   };
-  const AppNavigator = () => {
-    const { token } = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = () => {
     closeProfileModal();
     logout(navigation);
   };
 
-  React.useEffect(() => {
+  /*React.useEffect(() => {
       if (!token || !user) {
         navigation.navigate('Login');
       }
-    }, [token, user, navigation]);
+    }, [token, user, navigation]);*/
   return (
     <>
       <Tab.Navigator tabBar={(props) => <BottomNav {...props} />}>
@@ -77,7 +74,7 @@ const MainApp = ({ navigation }) => {
             ),
           }}
         />
-        <Tab.Screen name="Maps" component={Maps} options={{ headerTitle: 'Maps' }} />
+        <Tab.Screen name="Maps" component={Maps} options={{ headerTitle: 'Maps', headerShown: false }} />
         <Tab.Screen name="Search" component={Search} options={{ headerTitle: 'Search' }} />
         <Tab.Screen name="Chat" component={Chat} options={{ headerTitle: 'Pesan' }} />
         <Tab.Screen
@@ -130,15 +127,16 @@ const MainApp = ({ navigation }) => {
       </Modal>
     </>
   );
-};
+}; 
 
 const Router = () => {
   const { user, token, loading } = useAuth();
   if (loading) {
     return null;
   }
+  
   return (
-    <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'mainApp'}>
+    <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'Splash'}>
       <Stack.Screen name="mainApp" component={MainApp} options={{ headerShown: false }} />
       <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
@@ -186,6 +184,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'red',
   },
-})};
+});
 
 export default Router;

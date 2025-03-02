@@ -1,58 +1,30 @@
-import { View, Text, Image, ImageBackground, StyleSheet } from 'react-native'
-import React, { useEffect } from 'react'
-import Logo from '../assets/F!ND.png'
-import Background from '../assets/Tangan.png';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
 
 const Splash = ({ navigation }) => {
   useEffect(() => {
     setTimeout(() => {
-      navigation.replace('mainApp');
+      navigation.replace('mainApp'); // Setelah 3 detik, masuk ke mainApp
     }, 3000);
   }, [navigation]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.text}>Welcome to F!ND!</Text>
-        <View>
-        <Image source={Logo} style={styles.logo} resizeMode="contain" />
-        </View>
-        </View>
-        <View style={{flex: 1}}>
-        <Image source={Background} style={styles.backgroundImage} resizeMode="cover" />
-        </View>
+      <Text style={styles.text}>Welcome to F!ND!</Text>
+      <Image source={require('../assets/F!ND.png')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../assets/Tangan.png')} resizeMode="cover" />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: 'relative',
-    backgroundColor: '#fff',
-  },
-  backgroundImage: {
+  container: { flex: 1, justifyContent: 'space-evenly', alignItems: 'center', backgroundColor: '#fff' },
+  text: { fontSize: 40, fontWeight: 'bold', marginBottom: 20 },
+  logo: { width: 130, height: 130 },
+   backgroundImage: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1, 
-  },
-  text: {
-    color: '#000',
-    marginBottom: 20,
-    fontWeight: 'bold',
-     fontSize: 40,
-     marginBottom: 70,
-  },
-  logo: {
-    width: 130,
-    height: 130,
-    marginTop: 10,
   },
 });
 

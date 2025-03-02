@@ -12,6 +12,8 @@ import MapView, {
 import { GOOGLE_MAPS_API_KEY } from '@env'; // ✅ Ambil API Key dari .env
 import 'react-native-get-random-values';
 
+console.log("Google Maps API Key:", GOOGLE_MAPS_API_KEY);
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
@@ -19,19 +21,21 @@ const styles = StyleSheet.create({
 
 export default function GoogleMapsScreen() {
   const mapRef = useRef(null);
+  const [origin, setOrigin] = useState();
+  const [destination, setDestination] =useState();
   const [markerList, setMarkersList] = useState([
     {
       id: 1,
       latitude: -5.170977,
       longitude: 119.436224,
-      title: 'Anda berada di sini',
+      title: 'Universitas',
       description: 'Ini lokasi Anda saat ini',
     },
     {
       id: 2,
       latitude: -5.139055303753419,
       longitude: 119.44981866048666,
-      title: 'Tujuan Anda',
+      title: 'Bandara',
     }
   ]);
 
@@ -56,25 +60,50 @@ export default function GoogleMapsScreen() {
       2000
     );
   }
+  
 
   return (
     <View style={styles.container}>
-      <View style={{ zIndex: 1, flex: 0.5 }}>
-        <GooglePlacesAutocomplete
+      <View style={{ zIndex: 1, flex: 0.5, flexDirection: 'row', marginHorizontal: 10, marginTop: 5, marginVertical: 5}}>
+        <View style={{flex: 0.5}}>    
+       <GooglePlacesAutocomplete
           fetchDetails={true}
-          placeholder="Search"
+          placeholder="Lokasi Anda"
           onPress={(data, details = null) => {
-            if (details) {
-              console.log(JSON.stringify(details.geometry.location));
-              moveToLocation(details.geometry.location.lat, details.geometry.location.lng);
-            }
-          }}
+              let originCordinates = {
+                latitude: details?.geometry?.location.lat,
+               longitude: details?.geometry?.location.lng,
+              }
+              setOrigin(originCordinates);
+              moveToLocation(originCordinates);
+            }}
           query={{
-            key: GOOGLE_MAPS_API_KEY, 
-            language: 'en',
+            key: 'AIzaSyASPldC8hX_BGeTPivtHo8mgySU_ZZygYY', 
+            language: 'id',
           }}
           onFail={(error) => console.log(error)}
         />
+        </View>
+        <View style={{flex: 0.5, marginLeft: 6}}>    
+       <GooglePlacesAutocomplete
+          fetchDetails={true}
+          placeholder="Tujuan Komunitas Anda"
+          onPress={(data, details = null) => {
+            let destinationCordinates = {
+                latitude: details?.geometry?.location.lat,
+               longitude: details?.geometry?.location.lng,
+              };
+              setDestination(destinationCordinates);
+              moveToLocation(destinationCordinates);
+            
+          }}
+          query={{
+            key: 'AIzaSyASPldC8hX_BGeTPivtHo8mgySU_ZZygYY', 
+            language: 'id',
+          }}
+          onFail={(error) => console.log(error)}
+        />
+        </View>
       </View>
 
       <MapView
@@ -97,7 +126,15 @@ export default function GoogleMapsScreen() {
         minZoomLevel={5} // ✅ Zoom out minimal  
         maxZoomLevel={20} // ✅ Zoom in maksimal  
       >
-        <Marker coordinate={{ latitude: -5.156771, longitude: 119.446319 }}>
+      {origin !== undefined ? <Marker coordinate={origin}></Marker> : null}
+        {destination !== undefined ? ( <Marker 
+        coordinate={destination}>
+        </Marker>) : null}
+        {/*<Marker 
+        coordinate={{
+         latitude: -5.156771,
+          longitude: 119.446319
+           }}>
           <MyCustomMarkerView />
           <Callout style={{ width: 300, height: 100 }}>
             <MyCustomCalloutView />
@@ -115,7 +152,7 @@ export default function GoogleMapsScreen() {
           />
         ))}
 
-        {/* Lingkaran */}
+        //lingkaran
         <Circle
           center={{ latitude: -5.156771, longitude: 119.446319 }}
           radius={200}
@@ -123,7 +160,7 @@ export default function GoogleMapsScreen() {
           fillColor="#EBF5FB"
         />
 
-        {/* Garis */}
+        //garis
         <Polyline
           strokeColor="red"
           strokeWidth={2}
@@ -132,8 +169,7 @@ export default function GoogleMapsScreen() {
             { latitude: -5.156771, longitude: 119.446319 },
           ]}
         />
-
-        {/* Bentuk */}
+          //bentuk
         <Polygon
           strokeColor="red"
           fillColor="#EBF5FB"
@@ -144,7 +180,12 @@ export default function GoogleMapsScreen() {
             { latitude: -5.169281, longitude: 119.433949 },
             { latitude: -5.155345, longitude: 119.437141 },
           ]}
-        />
+        /> */}
+        {origin != undefined && destination != undefined  ? <MapViewDirections
+    origin={origin}
+    destination={destination}
+    apikey={GOOGLE_MAPS_API_KEY}
+  />: null}
       </MapView>
     </View>
   );

@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ImageBackground, KeyboardAvoidingView
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ImageBackground, KeyboardAvoidingView } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
 const Login = ({ navigation }) => {
@@ -18,7 +10,8 @@ const Login = ({ navigation }) => {
   const [createPress, setCreatePressed] = useState(false);
 
   const handleLogin = () => {
-    logs(email, password, navigation);
+    console.log('Login dengan:', email, password);
+    navigation.replace('Splash');
   };
 
   useEffect(() => {

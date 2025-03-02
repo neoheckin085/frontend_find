@@ -1,13 +1,4 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ImageBackground,
-  KeyboardAvoidingView
-} from 'react-native';
+import { View, Text,  TextInput,  TouchableOpacity,  Image,  StyleSheet,  ImageBackground } from 'react-native';
 import React, {useState, useEffect} from 'react'
 
 
@@ -18,10 +9,8 @@ const CreateAccount = ({ navigation }) => {
     const [name, setName] = useState('');
     const [pressed, setPressed] = useState(false);
     const [createPress, setCreatePressed] = useState(false);
+    
       useEffect(() => {
-        if (pressed) {
-          navigation.replace('Splash');
-        }
         if (createPress) {
           navigation.replace('Login');
         }
