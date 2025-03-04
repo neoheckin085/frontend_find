@@ -31,12 +31,14 @@ const Home = () => {
     }, 1000);
   };
 
-  const Card = ({ image, logo, title, description, index }) => (
+  const Card = ({ image, logo, title, description, index, community }) => (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Image style={styles.logo} source={logo} />
-        <Text style={styles.judul}>{title}</Text>
-      </View>
+      <TouchableOpacity onPress={() => navigation.navigate('Join', { community })}>
+        <View style={styles.cardHeader}>
+          <Image style={styles.logo} source={logo} />
+          <Text style={styles.judul}>{title}</Text>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity activeOpacity={0.7} onPress={() => handleDoubleTap(index)}>
         <Image style={styles.gambar} source={image} />
         {showLikeIcon[index] && (
@@ -66,9 +68,68 @@ const Home = () => {
 
   return (
     <ScrollView style={{ flex: 1 }}>
-      <Card image={Gambar} logo={Gambar} title="IkasiMakassar" description="Sebagai salah satu dari Sebelas Fatui Harbinger, Arlecchino sangat menghormati Tsaritsa..." index={0} />
-      <Card image={Gambar2} logo={Logo2} title="TlCavalary" description="Sebagai salah satu dari Sebelas Fatui Harbinger, Arlecchino sangat menghormati Tsaritsa..." index={1} />
-      <Card image={Gambar3} logo={Gambar3} title="Psm Fans" description="Sebagai salah satu dari Sebelas Fatui Harbinger, Arlecchino sangat menghormati Tsaritsa..." index={2} />
+      <Card image={Gambar} 
+        logo={Gambar} title="IkasiMakassar" 
+        description="Komunitas pecinta olahraga di Makassar" 
+        index={0}
+        community={{
+          name: "IkasiMakassar",
+          owner: "Admin Ikasi",
+          members: 500,
+          description: "Komunitas pecinta olahraga di Makassar",
+         mapImage: require('../assets/IkasiMakassar.png'),
+          logo: require('../assets/IkasiMakassar.png'),
+          images: [
+      require('../assets/IkasiMakassar.png'),
+      require('../assets/IkasiMakassar.png'),
+      require('../assets/IkasiMakassar.png'),
+      require('../assets/IkasiMakassar.png'),
+      require('../assets/IkasiMakassar.png'),
+    ]}}
+      />
+      <Card 
+        image={Gambar2} 
+        logo={Logo2} title="TlCavalary" 
+        description="Komunitas penggemar Team Liquid" 
+        index={1} 
+        community={{
+          name: "TlCavalary",
+          owner: "Admin Cavalary",
+          members: 300,
+          description: "Komunitas penggemar Team Liquid",
+          mapImage: require('../assets/Maps.png'),
+          logo: require('../assets/logoliquid.jpg'),
+          images: [
+      require('../assets/logoliquid.jpg'),
+      require('../assets/logoliquid.jpg'),
+      require('../assets/logoliquid.jpg'),
+      require('../assets/logoliquid.jpg'),
+      require('../assets/logoliquid.jpg'),
+    ]
+        }}
+      />
+      <Card 
+        image={Gambar3} 
+        logo={Gambar3} 
+        title="Psm Fans" 
+        description="Komunitas supporter PSM Makassar" 
+        index={2} 
+        community={{
+          name: "Psm Fans",
+          owner: "Admin PSM",
+          members: 1000,
+          description: "Komunitas supporter PSM Makassar",
+          mapImage: require('../assets/Maps.png'),
+          logo: require('../assets/PsmFans.png'),
+          images: [
+      require('../assets/PsmFans.png'),
+      require('../assets/PsmFans.png'),
+      require('../assets/PsmFans.png'),
+      require('../assets/PsmFans.png'),
+      require('../assets/PsmFans.png'),
+    ]
+        }}
+      />
     </ScrollView>
   );
 };
@@ -84,15 +145,15 @@ const styles = StyleSheet.create({
         padding: 10 
       },
   logo: {
-     width: 40,
+      width: 40,
       height: 40,
-       borderRadius: 50,
-        marginRight: 10
+      borderRadius: 50,
+      marginRight: 10
        },
   judul: { fontSize: 20,
-     fontWeight: 'bold',
-      textAlign: 'left',
-       marginTop: 2
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginTop: 2,
        },
   card: { margin: 3,
      borderRadius: 8,

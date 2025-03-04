@@ -4,8 +4,8 @@ import React, { useEffect } from 'react';
 const Find = ({ navigation }) => {
   useEffect(() => {
     setTimeout(() => {
-      navigation.replace('Login'); // Setelah 5 detik, masuk ke Login
-    }, 5000);
+      navigation.replace('Login'); 
+    }, 3000);
   }, [navigation]);
 
   return (

@@ -17,6 +17,8 @@ import Phone from '../components/ForgetPassword/Telepon'
 import Verif1 from '../components/ForgetPassword/VerifEmail'
 import Verif2 from '../components/ForgetPassword/VerifTelepon'
 import NewPassword from '../components/ForgetPassword/NewPassword';
+import Join from '../pages/Join'
+import PremiumScreen from '../components/Premium';
 import { useAuth } from '../../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -76,7 +78,7 @@ const MainApp = ({ navigation }) => {
         />
         <Tab.Screen name="Maps" component={Maps} options={{ headerTitle: 'Maps', headerShown: false }} />
         <Tab.Screen name="Search" component={Search} options={{ headerTitle: 'Search' }} />
-        <Tab.Screen name="Chat" component={Chat} options={{ headerTitle: 'Pesan' }} />
+        <Tab.Screen name="Chat" component={Chat} options={{ headerTitle: 'Pesan', headerShown: false }} />
         <Tab.Screen
           name="Profil"
           component={Profil}
@@ -91,39 +93,41 @@ const MainApp = ({ navigation }) => {
         />
       </Tab.Navigator>
 
-      {/* Modal untuk opsi umum */}
+      {/* Beranda */}
       <Modal visible={isModalVisible} transparent={true} animationType="fade" onRequestClose={closeModal}>
         <TouchableWithoutFeedback onPress={closeModal} accessible={false}>
         <View style={styles.modalOverlay} >
           <TouchableWithoutFeedback>
           <View style={styles.modalTopContentRight}>
-            <TouchableOpacity onPress={handleNavigateToMengikuti}>
+            <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={handleNavigateToMengikuti}>
               <Text style={styles.modalOption}>Mengikuti</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={closeModal}>
-              <Text style={styles.modalCancel}>Batal</Text>
+            <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={() => navigation.navigate('Premium')}>
+              <Text style={styles.modalOption}>Premium</Text>
             </TouchableOpacity>
+           
           </View>
           </TouchableWithoutFeedback>
         </View>
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Modal untuk profil */}
+      {/*  profil */}
       <Modal visible={isProfileModalVisible} transparent={true} animationType="fade" onRequestClose={closeProfileModal}>
+      <TouchableWithoutFeedback onPress={closeProfileModal} accessible={false}>
         <View style={styles.modalOverlay}>
+        <TouchableWithoutFeedback>
           <View style={styles.modalTopContentRight}>
             <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={handleNavigateToEditProfil}>
               <Text style={styles.modalOption}>Edit Profil</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={handleLogout}>
-              <Text style={styles.modalOption}>Keluar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{flex: 1, marginBottom:'auto', size: 'auto'}} onPress={closeProfileModal}>
-              <Text style={styles.modalCancel}>Batal</Text>
+              <Text style={styles.modalLogout}>Keluar</Text>
             </TouchableOpacity>
           </View>
+          </TouchableWithoutFeedback>
         </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </>
   );
@@ -150,6 +154,8 @@ const Router = () => {
       <Stack.Screen name="VerifTelepon" component={Verif2} options={{ headerShown: false}} />
       <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false}} />
       <Stack.Screen name="Comment" component={Komen} options={{ headerShown: false}} />
+      <Stack.Screen name="Join" component={Join} options={{ headerTitle: '' }} />
+      <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerTitle: 'Get Premium',   headerTintColor: 'white', headerStyle: { backgroundColor: 'black' },}} />
     </Stack.Navigator>
   );
 };
@@ -180,9 +186,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 10,
   },
-  modalCancel: {
-    fontSize: 14,
+  modalLogout: {
+    fontSize: 16,
     color: 'red',
+    marginBottom: 10,
   },
 });
 

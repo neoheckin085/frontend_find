@@ -20,13 +20,13 @@ const CreateAccount = ({ navigation }) => {
     <View style={styles.container}>
           {/* Background Image */}
           <ImageBackground
-            source={require('../assets/Background.png')} // Ganti dengan gambar background Anda
+            source={require('../assets/Background.png')} 
             style={styles.background}
           >
             {/* Logo */}
             <View style={styles.logoContainer}>
               <Image
-                source={require('../assets/Find.png')} // Ganti dengan gambar logo Anda
+                source={require('../assets/Find.png')} 
                 style={styles.logo}
               />
             </View>
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logo: {
-    width: 250, // Sesuaikan dengan ukuran logo
+    width: 250, 
     height: 250,
   },
   loginContainer: {
@@ -131,11 +131,11 @@ const styles = StyleSheet.create({
     color: '#000',
     height: 'auto',
     flex: 0,
-    shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: { width: 0, height: 4 }, // Shadow offset for iOS
-    shadowOpacity: 0.2, // Shadow opacity for iOS
-    shadowRadius: 4, // Shadow radius for iOS
-    elevation: 4, // Shadow for Android
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.2,
+    shadowRadius: 4, 
+    elevation: 4, 
   },
   loginButton: {
     width: '100%',
