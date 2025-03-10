@@ -24,6 +24,14 @@ const PremiumScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Get Premium</Text>
+      </View>
+       
       {/* Paket Premium */}
       <FlatList
         data={premiumPackages}
@@ -51,7 +59,8 @@ const PremiumScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 2,
+    marginBottom: 30,
     backgroundColor: '#fff',
   },
   listContainer: {
@@ -89,6 +98,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  header: {
+  backgroundColor: 'black',
+  paddingVertical: 20,
+  paddingHorizontal: 20,
+  borderBottomLeftRadius: 30, 
+  borderBottomRightRadius: 30,
+  alignItems: 'center',
+  position: 'relative',
+},
+headerTitle: {
+  fontSize: 22,
+  fontWeight: 'bold',
+  color: '#fff',
+},
+backButton: {
+  position: 'absolute',
+  left: 10,
+  top: '50%',
+  transform: [{ translateY: -15 }],
+  padding: 10, 
+  borderRadius: 50,
+},
+backText: {
+  fontSize: 28, 
+  color: '#fff',
+  fontWeight: 'bold',
+},
+
 
   featureContainer: {
     backgroundColor: '#c3bebe',

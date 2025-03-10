@@ -11,22 +11,22 @@ const EditProfil = ({ navigation }) => {
   const [lokasi, setLokasi] = useState('');
   const [email, setEmail] = useState('');
   const [instagram, setInstagram] = useState('');
-  const [selectedImage, setSelectedImage] = useState(Logokecil); // Default ke Logokecil
-  const [selectedLargeImage, setSelectedLargeImage] = useState(Logobesar); // Default ke Logobesar
+  const [selectedImage, setSelectedImage] = useState(Logokecil); 
+  const [selectedLargeImage, setSelectedLargeImage] = useState(Logobesar); 
 
   const handleImageChange = () => {
-    // Menampilkan pilihan untuk memilih foto
+   
     Alert.alert(
       'Pilih Foto Profil',
       'Pilih gambar profil yang ingin digunakan',
       [
         {
           text: 'Edit Profil Kecil',
-          onPress: () => setSelectedImage(Logokecil), // Set ke Logokecil
+          onPress: () => setSelectedImage(Logokecil), 
         },
         {
           text: 'Edit Profil Besar',
-          onPress: () => openGalleryForLargeImage(), // Membuka galeri untuk memilih gambar besar
+          onPress: () => openGalleryForLargeImage(), 
         },
         { text: 'Batal', style: 'cancel' },
       ],
@@ -35,15 +35,15 @@ const EditProfil = ({ navigation }) => {
   };
 
   const openGalleryForLargeImage = () => {
-    // Membuka galeri gambar untuk memilih gambar besar
+    
     launchImageLibrary({ mediaType: 'photo', quality: 1 }, (response) => {
       if (response.didCancel) {
         console.log('User canceled image picker');
       } else if (response.errorMessage) {
         console.log('ImagePicker Error: ', response.errorMessage);
       } else {
-        const source = { uri: response.assets[0].uri }; // Mendapatkan uri gambar yang dipilih
-        setSelectedLargeImage(source); // Mengatur gambar besar yang baru
+        const source = { uri: response.assets[0].uri };
+        setSelectedLargeImage(source); 
       }
     });
   };
@@ -52,7 +52,7 @@ const EditProfil = ({ navigation }) => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Logo besar tetap di background */}
       <ImageBackground
-        source={selectedLargeImage} // Gambar besar yang dipilih
+        source={selectedLargeImage} 
         style={styles.backgroundImage}
         resizeMode='cover'
       >
@@ -61,12 +61,11 @@ const EditProfil = ({ navigation }) => {
       {/* Gambar profil kecil yang bisa diganti */}
       <TouchableOpacity style={styles.kecil} onPress={handleImageChange}>
         <Image
-          source={selectedImage} // Gambar kecil yang dipilih
+          source={selectedImage} 
           style={styles.image}
         />
       </TouchableOpacity>
 
-      {/* Teks untuk mengganti foto sebagai tombol */}
       <TouchableOpacity onPress={handleImageChange}>
         <Text style={styles.imageText}>Ganti Foto</Text>
       </TouchableOpacity>
@@ -113,15 +112,14 @@ const EditProfil = ({ navigation }) => {
         onPress={() => {
           console.log(`Nama: ${name}, Whatsapp: ${whatsapp}, Lokasi: ${lokasi}, Email: ${email}, Instagram: ${instagram}`);
           
-          // Mengirim data ke halaman Profil
           navigation.navigate('Profil', {
             name,
             whatsapp,
             lokasi,
             email,
             instagram,
-            selectedImage,   // Gambar kecil yang dipilih
-            selectedLargeImage, // Gambar besar yang dipilih
+            selectedImage,   
+            selectedLargeImage, 
           });
         }}
       />

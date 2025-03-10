@@ -27,9 +27,7 @@ const Email = () => {
           <Text style={styles.backgroundTitle}>Search your account</Text>
         </View>
 
-        {/* Form Container */}
         <View style={styles.formContainer}>
-          {/* Instruction */}
           <Text style={styles.instructionText}>
             To search your account, please enter your email address
           </Text>
@@ -44,12 +42,10 @@ const Email = () => {
             keyboardType="email-address"
           />
 
-          {/* Use phone number */}
           <TouchableOpacity onPress={() => navigation.navigate('Telepon')}>
             <Text style={styles.phoneOptionText}>Use phone number? Click here</Text>
           </TouchableOpacity>
 
-          {/* Enter Button */}
           <TouchableOpacity style={styles.enterButton}  onPress={() => navigation.navigate('VerifEmail')}>
             <Text style={styles.enterButtonText}>Enter</Text>
           </TouchableOpacity>
@@ -65,7 +61,7 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
-    justifyContent: 'flex-start', // Align items to the top
+    justifyContent: 'flex-start', 
   },
   headerContainer: {
     flexDirection: 'row',
@@ -76,7 +72,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   backButton: {
-    marginRight: 10, // Space between the back button and the title
+    marginRight: 10, 
   },
   backgroundTitle: {
     fontSize: 28,
@@ -84,16 +80,16 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   formContainer: {
-    position: 'absolute', // Make the form container absolute
-    bottom: 0, // Align it to the bottom
+    position: 'absolute', 
+    bottom: 0, 
     left: 0,
     right: 0,
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: '5%', // Adjust padding as needed
+    padding: '5%', 
     alignItems: 'center',
-    height: '70%', // Adjust height as needed
+    height: '70%', 
   },
   instructionText: {
     fontSize: 20,

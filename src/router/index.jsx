@@ -155,7 +155,7 @@ const Router = () => {
       <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false}} />
       <Stack.Screen name="Comment" component={Komen} options={{ headerShown: false}} />
       <Stack.Screen name="Join" component={Join} options={{ headerTitle: '' }} />
-      <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerTitle: 'Get Premium',   headerTintColor: 'white', headerStyle: { backgroundColor: 'black' },}} />
+      <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };

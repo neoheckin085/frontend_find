@@ -9,7 +9,7 @@ import MapView, {
     Polyline,
     Polygon
 } from 'react-native-maps';
-import { GOOGLE_MAPS_API_KEY } from '@env'; // ✅ Ambil API Key dari .env
+import { GOOGLE_MAPS_API_KEY } from '@env'; //  Ambil API Key dari .env
 import 'react-native-get-random-values';
 
 console.log("Google Maps API Key:", GOOGLE_MAPS_API_KEY);
@@ -28,19 +28,22 @@ export default function GoogleMapsScreen() {
       id: 1,
       latitude: -5.170977,
       longitude: 119.436224,
-      title: 'Universitas',
+      title: 'Lokasi Anda',
       description: 'Ini lokasi Anda saat ini',
     },
     {
       id: 2,
       latitude: -5.139055303753419,
       longitude: 119.44981866048666,
-      title: 'Bandara',
+      title: 'Komunitas',
+      description: 'Psm Fans',
     }
   ]);
 
   const MyCustomMarkerView = () => (
-    <Image style={{ width: 30, height: 30 }} source={require('../assets/PsmFans.png')} />
+    <View style={{width:40, height:40, backgroundColor:'yellow', borderWidth:2, borderRadius:20, alignItems:'center', }}>
+      <Image style={{ width: 25, height: 25, borderRadius: 20 }} source={require('../assets/PsmFans.png')} />
+    </View>
   );
 
   const MyCustomCalloutView = () => (
@@ -111,26 +114,26 @@ export default function GoogleMapsScreen() {
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={{
-          latitude: -5.169198,
-          longitude: 119.433107,
+          latitude: -5.139055303753419,
+          longitude: 119.44981866048666,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}
-        zoomEnabled={true} // ✅ Bisa zoom dengan pinch  
-        zoomControlEnabled={true} // ✅ Tampilkan tombol zoom (Android)  
-        zoomTapEnabled={true} // ✅ Double-tap zoom lebih smooth  
-        toolbarEnabled={true} // ✅ Toolbar Google Maps untuk kontrol tambahan  
-        scrollEnabled={true} // ✅ Bisa geser dengan bebas  
-        rotateEnabled={true} // ✅ Bisa memutar peta dengan dua jari  
-        pitchEnabled={true} // ✅ Bisa tilt/miringkan peta untuk tampilan lebih dinamis  
-        minZoomLevel={5} // ✅ Zoom out minimal  
-        maxZoomLevel={20} // ✅ Zoom in maksimal  
+        zoomEnabled={true} 
+        zoomControlEnabled={true} 
+        zoomTapEnabled={true} 
+        toolbarEnabled={true} 
+        scrollEnabled={true} 
+        rotateEnabled={true} 
+        pitchEnabled={true} 
+        minZoomLevel={5} 
+        maxZoomLevel={20}
       >
       {origin !== undefined ? <Marker coordinate={origin}></Marker> : null}
         {destination !== undefined ? ( <Marker 
         coordinate={destination}>
         </Marker>) : null}
-        {/*<Marker 
+        <Marker 
         coordinate={{
          latitude: -5.156771,
           longitude: 119.446319
@@ -152,7 +155,7 @@ export default function GoogleMapsScreen() {
           />
         ))}
 
-        //lingkaran
+         {/*//lingkaran
         <Circle
           center={{ latitude: -5.156771, longitude: 119.446319 }}
           radius={200}

@@ -73,12 +73,11 @@ const CreateAccount = ({ navigation }) => {
                 style={styles.input}
               />
     
-              {/* Tombol Login */}
               <TouchableOpacity style={styles.loginButton} onPress={() => setPressed(true)}>
                 <Text style={styles.loginButtonText}>Register</Text>
               </TouchableOpacity>
     
-              {/* Tombol Create Account */}
+
               <TouchableOpacity style={styles.createAccountButton} onPress={() => setCreatePressed(true)}>
                 <Text style={styles.createAccountText}>Already have an account?</Text>
               </TouchableOpacity>
