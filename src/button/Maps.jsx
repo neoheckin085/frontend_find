@@ -1,195 +1,111 @@
 import React, { useRef, useState } from 'react';
-import { Image, StyleSheet, View, Text } from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import MapView, { 
-    Marker,
-    PROVIDER_GOOGLE,
-    Callout,
-    Circle,
-    Polyline,
-    Polygon
-} from 'react-native-maps';
-import { GOOGLE_MAPS_API_KEY } from '@env'; //  Ambil API Key dari .env
-import 'react-native-get-random-values';
-
-console.log("Google Maps API Key:", GOOGLE_MAPS_API_KEY);
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
-});
+import { Image, StyleSheet, View, Text, TextInput } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 export default function GoogleMapsScreen() {
   const mapRef = useRef(null);
-  const [origin, setOrigin] = useState();
-  const [destination, setDestination] =useState();
-  const [markerList, setMarkersList] = useState([
+  const [searchText, setSearchText] = useState('');
+
+  const [markers, setMarkers] = useState([
     {
       id: 1,
-      latitude: -5.170977,
-      longitude: 119.436224,
-      title: 'Lokasi Anda',
-      description: 'Ini lokasi Anda saat ini',
+      latitude: -5.139055,
+      longitude: 119.449818,
+      title: 'Ikasi Kota Makassar',
+      image: require('../assets/IkasiMakassar.png'),
     },
     {
       id: 2,
-      latitude: -5.139055303753419,
-      longitude: 119.44981866048666,
-      title: 'Komunitas',
-      description: 'Psm Fans',
-    }
+      latitude: -5.156771,
+      longitude: 119.446319,
+      title: 'TLCavalryID',
+      image: require('../assets/TlCavalary.png'),
+    },
+    {
+      id: 3,
+      latitude: -5.170977,
+      longitude: 119.436224,
+      title: 'PSM Fans',
+      image: require('../assets/PsmFans.png'),
+    },
   ]);
-
-  const MyCustomMarkerView = () => (
-    <View style={{width:40, height:40, backgroundColor:'yellow', borderWidth:2, borderRadius:20, alignItems:'center', }}>
-      <Image style={{ width: 25, height: 25, borderRadius: 20 }} source={require('../assets/PsmFans.png')} />
-    </View>
-  );
-
-  const MyCustomCalloutView = () => (
-    <View style={{ width: 150 }}>
-      <Text>MyCustomCalloutView</Text>
-    </View>
-  );
-
-  async function moveToLocation(latitude, longitude) {
-    mapRef.current.animateToRegion(
-      {
-        latitude,
-        longitude,
-        latitudeDelta: 0.015,
-        longitudeDelta: 0.0121,
-      },
-      2000
-    );
-  }
-  
 
   return (
     <View style={styles.container}>
-      <View style={{ zIndex: 1, flex: 0.5, flexDirection: 'row', marginHorizontal: 10, marginTop: 5, marginVertical: 5}}>
-        <View style={{flex: 0.5}}>    
-       <GooglePlacesAutocomplete
-          fetchDetails={true}
-          placeholder="Lokasi Anda"
-          onPress={(data, details = null) => {
-              let originCordinates = {
-                latitude: details?.geometry?.location.lat,
-               longitude: details?.geometry?.location.lng,
-              }
-              setOrigin(originCordinates);
-              moveToLocation(originCordinates);
-            }}
-          query={{
-            key: 'AIzaSyASPldC8hX_BGeTPivtHo8mgySU_ZZygYY', 
-            language: 'id',
-          }}
-          onFail={(error) => console.log(error)}
-        />
-        </View>
-        <View style={{flex: 0.5, marginLeft: 6}}>    
-       <GooglePlacesAutocomplete
-          fetchDetails={true}
-          placeholder="Tujuan Komunitas Anda"
-          onPress={(data, details = null) => {
-            let destinationCordinates = {
-                latitude: details?.geometry?.location.lat,
-               longitude: details?.geometry?.location.lng,
-              };
-              setDestination(destinationCordinates);
-              moveToLocation(destinationCordinates);
-            
-          }}
-          query={{
-            key: 'AIzaSyASPldC8hX_BGeTPivtHo8mgySU_ZZygYY', 
-            language: 'id',
-          }}
-          onFail={(error) => console.log(error)}
-        />
-        </View>
-      </View>
-
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={{
-          latitude: -5.139055303753419,
-          longitude: 119.44981866048666,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
+          latitude: -5.150000,
+          longitude: 119.440000,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
         }}
-        zoomEnabled={true} 
-        zoomControlEnabled={true} 
-        zoomTapEnabled={true} 
-        toolbarEnabled={true} 
-        scrollEnabled={true} 
-        rotateEnabled={true} 
-        pitchEnabled={true} 
-        minZoomLevel={5} 
-        maxZoomLevel={20}
       >
-      {origin !== undefined ? <Marker coordinate={origin}></Marker> : null}
-        {destination !== undefined ? ( <Marker 
-        coordinate={destination}>
-        </Marker>) : null}
-        <Marker 
-        coordinate={{
-         latitude: -5.156771,
-          longitude: 119.446319
-           }}>
-          <MyCustomMarkerView />
-          <Callout style={{ width: 300, height: 100 }}>
-            <MyCustomCalloutView />
-          </Callout>
-        </Marker>
-
-        {markerList.map((marker) => (
-          <Marker
-            draggable
-            key={marker.id}
-            coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-            title={marker.title}
-            description={marker.description}
-            onDragEnd={(e) => console.log({ x: e.nativeEvent.coordinate })}
-          />
+        {markers.map((marker) => (
+          <Marker key={marker.id} coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}>
+            <View style={styles.markerContainer}>
+              <Text style={styles.markerText}>{marker.title}</Text>
+              <Image source={marker.image} style={styles.markerImage} />
+            </View>
+          </Marker>
         ))}
-
-         {/*//lingkaran
-        <Circle
-          center={{ latitude: -5.156771, longitude: 119.446319 }}
-          radius={200}
-          strokeColor="blue"
-          fillColor="#EBF5FB"
-        />
-
-        //garis
-        <Polyline
-          strokeColor="red"
-          strokeWidth={2}
-          coordinates={[
-            { latitude: -5.155345, longitude: 119.437141 },
-            { latitude: -5.156771, longitude: 119.446319 },
-          ]}
-        />
-          //bentuk
-        <Polygon
-          strokeColor="red"
-          fillColor="#EBF5FB"
-          strokeWidth={2}
-          coordinates={[
-            { latitude: -5.155345, longitude: 119.437141 },
-            { latitude: -5.168835124417532, longitude: 119.42946707652868 },
-            { latitude: -5.169281, longitude: 119.433949 },
-            { latitude: -5.155345, longitude: 119.437141 },
-          ]}
-        /> */}
-        {origin != undefined && destination != undefined  ? <MapViewDirections
-    origin={origin}
-    destination={destination}
-    apikey={GOOGLE_MAPS_API_KEY}
-  />: null}
       </MapView>
+
+      {/* Search Bar */}
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Cari lokasi..."
+        placeholderTextColor="#888"
+        value={searchText}
+        onChangeText={setSearchText}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  map: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
+
+  markerContainer: {
+    alignItems: 'center',
+  },
+
+  markerText: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 2,
+    paddingHorizontal: -16,
+    borderRadius: 5,
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+
+  markerImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    borderWidth: -1,
+    borderColor: 'white',
+  },
+
+  searchBar: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    height: 40,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    fontSize: 16,
+  },
+});

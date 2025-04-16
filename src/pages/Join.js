@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import GoogleMapsScreen from '../button/Maps';
 
 const Join = () => {
   const route = useRoute();
@@ -14,7 +15,9 @@ const Join = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Image source={community.mapImage} style={styles.mapImage} />
+        <View style={styles.mapContainer}>
+          <GoogleMapsScreen />
+        </View>
         <Image source={community.logo} style={styles.communityLogo} />
       </View>
 
@@ -39,7 +42,8 @@ const Join = () => {
             styles.followButton, 
             { 
               borderColor: isFollowing ? '#000' : '#fff',
-              backgroundColor: isFollowing ? '#fff'  :'#000', }
+              backgroundColor: isFollowing ? '#fff'  :'#000', 
+            }
           ]}
           onPress={handleFollow}
         >
@@ -47,7 +51,6 @@ const Join = () => {
             {isFollowing ? 'Mengikuti' : 'Ikuti'}
           </Text>
         </TouchableOpacity>
-
       </View>
     </ScrollView>
   );
@@ -55,59 +58,59 @@ const Join = () => {
 
 const styles = StyleSheet.create({
   container: {
-   flex: 1,
+    flex: 1,
     backgroundColor: '#fff' 
-},
+  },
   header: {
     alignItems: 'center', 
     marginBottom: 20 
-},
-  mapImage: { 
-    width: '100%', 
-   height: 150 
-},
+  },
+  mapContainer: {
+    width: '100%',
+    height: 200,
+  },
   communityLogo: { 
     width: 80, 
     height: 80, 
     borderRadius: 40, 
     marginTop: -40 
-},
+  },
   infoContainer: { 
     padding: 20 
-},
+  },
   title: { 
     fontSize: 32,
     marginBottom: 10, 
     fontWeight: 'bold', 
     textAlign: 'center' 
-},
+  },
   subtitle: { 
     textAlign: 'center', 
     marginBottom: 8, 
     fontSize: 14 ,
     color: 'gray'
-},
+  },
   memberCount: { 
     textAlign: 'center', 
     fontWeight: 'bold', 
     marginVertical: 5,
     fontSize: 19,
-},
+  },
   sectionTitle: { 
     fontSize: 18, 
     fontWeight: 'bold', 
     marginTop: 15 
-},
+  },
   description: { 
     fontSize: 16, 
     marginTop: 5 
-},
+  },
   communityImage: { 
     width: 200, 
     height: 200, 
     borderRadius: 10, 
     margin: 5 
-},
+  },
   followButton: {
     marginTop: 20,
     paddingVertical: 10,

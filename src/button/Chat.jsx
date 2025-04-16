@@ -78,7 +78,6 @@ const Messages = ({ route, navigation }) => {
 };
 
 const Stack = createStackNavigator();
-
 const App = () => {
   return (
       <Stack.Navigator>

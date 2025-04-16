@@ -10,25 +10,25 @@ const Login = ({ navigation }) => {
   const [createPress, setCreatePressed] = useState(false);
 
   const handleLogin = () => {
-    console.log('Login dengan:', email, password);
-    navigation.replace('Splash');
+    logs(email, password, navigation);
+    navigation.navigate('mainApp');
   };
 
   useEffect(() => {
     if (pressed) {
-      navigation.replace('mainApp');
+      navigation.navigate('mainApp');
     }
     if (createPress) {
       navigation.replace('Register');
     }
     if (token && user) {
-      navigation.navigate('mainApp');
+      navigation.navigate('Splash');
     }
   }, [pressed, createPress, token, user, navigation]);
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior='padding'>
-      <ImageBackground source={require('../assets/Background.png')} style={styles.background}>
+      <ImageBackground source={require('../assets/Hitam.png')} style={styles.background}>
         <KeyboardAvoidingView style={styles.logoContainer}>
           <Image source={require('../assets/Find.png')} style={styles.logo} />
         </KeyboardAvoidingView>

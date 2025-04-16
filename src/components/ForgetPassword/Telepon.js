@@ -17,7 +17,7 @@ const Telepon = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
-      <ImageBackground source={require('../../assets/Background.png')} style={styles.background}>
+      <ImageBackground source={require('../../assets/Hitam.png')} style={styles.background}>
         <View style={styles.headerContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Icon name="arrow-back" size={24} color="white" />
@@ -39,9 +39,6 @@ const Telepon = () => {
             keyboardType="phone-pad" 
           />
 
-          <TouchableOpacity onPress={() => navigation.navigate('SearchAccount')}>
-            <Text style={styles.phoneOptionText}>Use email? Click here</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.enterButton} onPress={() => navigation.navigate('VerifTelepon')}>
             <Text style={styles.enterButtonText}>Enter</Text>
@@ -123,6 +120,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
+    marginTop: 10,
   },
   enterButtonText: {
     color: '#fff',

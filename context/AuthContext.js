@@ -51,6 +51,24 @@ export const AuthProvider = ({children}) => {
         }
     };
 
+    const register = async (name, email, password, nomor_telepon, navigation) => {
+        setError({});
+        try {
+            const response = await Api.post('/register', {
+                name,
+                email,
+                password,
+                nomor_telepon,
+                device_name: `${Platform.OS} ${Platform.Version}`,
+            });
+            navigation.replace('Login');
+        } catch (e) {
+            if (e.response.status === 422) {
+                setError(e.response.data.errors);
+            }
+        }
+    };
+
     const logout = async (navigation) => {
         try {
             await Api.post(
@@ -68,7 +86,8 @@ export const AuthProvider = ({children}) => {
     };
 
     return (
-        <AuthContext.Provider value={{user, token, logs, logout, error, loading}}>
+        <AuthContext.Provider value={{user, token, logs, logout, register, error, loading}}>
+
             {children}
         </AuthContext.Provider>
     )

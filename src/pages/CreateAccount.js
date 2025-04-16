@@ -1,26 +1,34 @@
 import { View, Text,  TextInput,  TouchableOpacity,  Image,  StyleSheet,  ImageBackground } from 'react-native';
 import React, {useState, useEffect} from 'react'
+import { useAuth } from '../../context/AuthContext';
 
 
 const CreateAccount = ({ navigation }) => {
-   const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [username, setUsername] = useState('');
-    const [name, setName] = useState('');
-    const [pressed, setPressed] = useState(false);
-    const [createPress, setCreatePressed] = useState(false);
+  const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
+   const [nomor_telepon, setNomor] = useState('');
+   const [name, setName] = useState('');
+   const [pressed, setPressed] = useState(false);
+   const [createPress, setCreatePressed] = useState(false);
+
+    const { register, error } = useAuth();
     
-      useEffect(() => {
-        if (createPress) {
-          navigation.replace('Login');
-        }
-      }, [pressed, createPress, navigation]);
+    const handleRegister = () => {
+      register(name, email, password, nomor_telepon, navigation);
+      navigation.navigate('Login');
+    };
+  
+    useEffect(() => {
+      if (createPress) {
+        navigation.replace('Login');
+      }
+    }, [pressed, createPress, navigation]);
   
   return (
     <View style={styles.container}>
           {/* Background Image */}
           <ImageBackground
-            source={require('../assets/Background.png')} 
+            source={require('../assets/Hitam.png')} 
             style={styles.background}
           >
             {/* Logo */}
@@ -48,18 +56,16 @@ const CreateAccount = ({ navigation }) => {
               <TextInput
                 placeholder="Username"
                 placeholderTextColor="#000"
-                value={username}
-                onChangeText={setUsername}
-                secureTextEntry
+                value={name}
+                onChangeText={setName}
                 style={styles.input}
               />
               
               <TextInput
-                placeholder="Name"
+                placeholder="Nomor Telepon"
                 placeholderTextColor="#000"
-                value={name}
-                onChangeText={setName}
-                secureTextEntry
+                value={nomor_telepon}
+                onChangeText={setNomor}
                 style={styles.input}
               />
     
@@ -73,7 +79,8 @@ const CreateAccount = ({ navigation }) => {
                 style={styles.input}
               />
     
-              <TouchableOpacity style={styles.loginButton} onPress={() => setPressed(true)}>
+              <TouchableOpacity style={styles.loginButton} 
+              onPress={handleRegister}>
                 <Text style={styles.loginButtonText}>Register</Text>
               </TouchableOpacity>
     

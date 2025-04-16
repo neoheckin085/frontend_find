@@ -18,7 +18,7 @@ const NewPassword = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
-      <ImageBackground source={require('../../assets/Background.png')} style={styles.background}>
+      <ImageBackground source={require('../../assets/Hitam.png')} style={styles.background}>
 
         <View style={styles.headerContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>

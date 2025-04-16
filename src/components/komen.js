@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+//import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const Comment = () => {
   const navigation = useNavigation();
@@ -66,13 +67,13 @@ const Comment = () => {
   const renderComments = (comments, depth = 0) => {
     return comments.map(comment => (
       <View key={comment.id} style={[styles.commentContainer, { marginLeft: depth * 20 }]}> 
-        <Icon name="user-circle-o" size={30} color="gray" style={styles.avatar} />
+        <Icon name="person-circle-outline" size={30} color="gray" style={styles.avatar} />
         <View style={styles.commentContent}>
           <Text style={styles.username}>{comment.username}</Text>
           <Text style={styles.commentText}>{comment.text}</Text>
           <View style={styles.commentActions}>
             <TouchableOpacity onPress={() => handleLikeComment(comment.id)}>
-              <Icon name={comment.liked ? "heart" : "heart-o"} size={16} color={comment.liked ? "red" : "black"} />
+              <Icon name={comment.liked ? "heart" : "heart-outline"} size={16} color={comment.liked ? "red" : "black"} />
             </TouchableOpacity>
             <Text style={styles.likeCount}>{comment.likes}</Text>
             <TouchableOpacity onPress={() => handleReplyComment(comment.id, comment.username)}>
@@ -96,12 +97,12 @@ const Comment = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Komentar</Text>
-      </View>
+      <View style={styles.headerContainer}>
+  <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+    <Icon name="arrow-back" size={24} color="black" />
+  </TouchableOpacity>
+  <Text style={styles.title}>Komentar</Text>
+</View>
 
       <ScrollView style={styles.commentList}>{renderComments(comments)}</ScrollView>
 
@@ -121,22 +122,89 @@ const Comment = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 1, borderColor: '#ddd' },
-  title: { fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
-  commentList: { padding: 15 },
-  commentContainer: { flexDirection: 'row', marginBottom: 10 },
-  avatar: { marginRight: 10 },
-  commentContent: { flex: 1 },
-  username: { fontWeight: 'bold' },
-  commentText: { color: '#333' },
-  commentActions: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  likeCount: { marginLeft: 5 },
-  replyText: { marginLeft: 10, color: 'gray' },
-  seeReplyText: { color: 'blue', marginTop: 5 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 1, borderColor: '#ddd' },
-  input: { flex: 1, padding: 10, borderRadius: 20, backgroundColor: '#f0f0f0' },
-  sendButton: { marginLeft: 10, padding: 10, backgroundColor: 'blue', borderRadius: 20 },
+  container: {
+     flex: 1,
+      backgroundColor: '#fff'
+  },
+  headerContainer: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 10,
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingTop:  20 ,
+  paddingHorizontal: 20,
+  paddingBottom: 10,
+  backgroundColor: '#fff',
+  borderBottomWidth: 1,
+  borderBottomColor: '#ddd',
+},
+
+backButton: {
+  marginRight: 10,
+},
+  title: {
+  fontSize: 24,
+  fontWeight: 'bold',
+},
+ commentList: {
+  padding: 15,
+  marginTop: 90, 
+},
+
+  commentContainer: {
+     flexDirection: 'row', 
+     marginBottom: 10 
+  },
+  avatar: {
+     marginRight: 10 
+  },
+  commentContent: { 
+    flex: 1 
+  },
+  username: { 
+    fontWeight: 'bold' 
+  },
+  commentText: { 
+    color: '#333' 
+  },
+  commentActions: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 5 
+  },
+  likeCount: { 
+    marginLeft: 5 
+  },
+  replyText: { 
+    marginLeft: 10, 
+    color: 'gray' 
+  },
+  seeReplyText: { 
+    color: 'blue', 
+    marginTop: 5 
+  },
+  inputContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 10, 
+    borderTopWidth: 1, 
+    borderColor: '#ddd' 
+  },
+  input: { 
+    flex: 1, 
+    padding: 10, 
+    borderRadius: 20, 
+    backgroundColor: '#f0f0f0' 
+  },
+  sendButton: { 
+    marginLeft: 10, 
+    padding: 10, 
+    backgroundColor: 'blue', 
+    borderRadius: 20 
+  },
 });
 
 export default Comment;

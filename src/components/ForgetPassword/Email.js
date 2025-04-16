@@ -18,7 +18,7 @@ const Email = () => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       {/* Background Image */}
-      <ImageBackground source={require('../../assets/Background.png')} style={styles.background}>
+      <ImageBackground source={require('../../assets/Hitam.png')} style={styles.background}>
         {/* Header & Back Button */}
         <View style={styles.headerContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
