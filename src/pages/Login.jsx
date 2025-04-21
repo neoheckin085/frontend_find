@@ -10,11 +10,11 @@ const Login = ({ navigation }) => {
   const [createPress, setCreatePressed] = useState(false);
 
   const handleLogin = () => {
-    logs(email, password, navigation);
-    navigation.navigate('mainApp');
+   logs(email, password);
+   navigation.navigate('mainApp');
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (pressed) {
       navigation.navigate('mainApp');
     }
@@ -24,7 +24,7 @@ const Login = ({ navigation }) => {
     if (token && user) {
       navigation.navigate('Splash');
     }
-  }, [pressed, createPress, token, user, navigation]);
+  }, [pressed, createPress, token, user, navigation]);*/
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior='padding'>

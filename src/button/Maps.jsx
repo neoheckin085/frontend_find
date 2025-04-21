@@ -1,10 +1,13 @@
 import React, { useRef, useState } from 'react';
-import { Image, StyleSheet, View, Text, TextInput } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function GoogleMapsScreen() {
   const mapRef = useRef(null);
   const [searchText, setSearchText] = useState('');
+  const navigation = useNavigation();
 
   const [markers, setMarkers] = useState([
     {
@@ -53,14 +56,23 @@ export default function GoogleMapsScreen() {
         ))}
       </MapView>
 
-      {/* Search Bar */}
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Cari lokasi..."
-        placeholderTextColor="#888"
-        value={searchText}
-        onChangeText={setSearchText}
-      />
+      {/* Custom Search Bar */}
+      <View style={styles.searchBarContainer}>
+        <Ionicons
+          name="arrow-back"
+          size={24}
+          color="#333"
+          style={styles.icon}
+          onPress={() => navigation.goBack()}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Cari lokasi.."
+          placeholderTextColor="#666"
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+      </View>
     </View>
   );
 }
@@ -76,7 +88,7 @@ const styles = StyleSheet.create({
   markerText: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingVertical: 2,
-    paddingHorizontal: -16,
+    paddingHorizontal: 5,
     borderRadius: 5,
     fontSize: 12,
     fontWeight: 'bold',
@@ -88,24 +100,37 @@ const styles = StyleSheet.create({
   markerImage: {
     width: 50,
     height: 50,
-    borderRadius: 50,
-    borderWidth: -1,
+    borderRadius: 25,
+    borderWidth: 1,
     borderColor: 'white',
   },
 
-  searchBar: {
+  searchBarContainer: {
     position: 'absolute',
     top: 10,
     left: 10,
     right: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    height: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f2f2f2',
+    borderRadius: 25,
+    paddingHorizontal: 10,
+    height: 45,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+  },
+
+  searchInput: {
+    flex: 1,
     fontSize: 16,
+    paddingHorizontal: 10,
+    color: '#000',
+  },
+
+  icon: {
+    paddingHorizontal: 6,
   },
 });

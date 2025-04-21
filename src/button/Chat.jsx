@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import NotificationScreen from '../components/Notifikasi'; 
+
 
 const messages = [
   { id: '1', name: 'psmfans1915', sender: 'Eqi', message: 'adakah nobar', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s', isUnread: true, allMessages: ['Eqi: Halo', 'Eqi: Apa kabar?'] },
@@ -78,14 +81,27 @@ const Messages = ({ route, navigation }) => {
 };
 
 const Stack = createStackNavigator();
-const App = () => {
+const App = ( {navigation} ) => {
   return (
-      <Stack.Navigator>
-        <Stack.Screen name="ChatList" component={ChatList} options={{ title: "Daftar Komunitas" }} />
-        <Stack.Screen name="Messages" component={Messages} />
-      </Stack.Navigator>
+    <Stack.Navigator>
+      <Stack.Screen
+  name="ChatList"
+  component={ChatList}
+  options={{
+    title: 'Pesan',
+    headerLeft: () => null, 
+    headerRight: () => (
+      <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
+        <FontAwesome name="bell" size={22} color="#808080" style={styles.icon}/>
+      </TouchableOpacity>
+    ),
+  }}
+/>
+      <Stack.Screen name="Messages" component={Messages} />
+    </Stack.Navigator>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -165,6 +181,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 10,
     marginRight: 10,
+  },
+  icon: {
+    marginRight: 20,
   },
 });
 

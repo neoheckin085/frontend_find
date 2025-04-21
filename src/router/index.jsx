@@ -84,8 +84,14 @@ const mainApp = ({ navigation }) => {
           }}
         />
         <Tab.Screen name="Maps" component={Maps} options={{ headerTitle: 'Maps', headerShown: false }} />
-        <Tab.Screen name="Search" component={Search} options={{ headerTitle: 'Search' }} />
-        <Tab.Screen name="Chat" component={Chat} options={{ headerTitle: 'Daftar Komunitas', headerShown: false }} />
+        <Tab.Screen name="Search" component={Search} options={{ headerTitle: 'Search', headerShown: false }} />
+        <Tab.Screen name="Chat" component={Chat} options={{ headerShown: false, headerTitle: 'Daftar Komunitas', headerRight: () => (
+              <View style={styles.headerIconsChat}>
+                <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
+                  <Icon name="bell" size={24} color="#808080" style={styles.iconChat} />
+                </TouchableOpacity>
+              </View>
+            ), }} />
         <Tab.Screen
           name="Profil"
           component={Profil}
@@ -156,9 +162,12 @@ const Router = () => {
   
   return (
     <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'Find'}>
-      <Stack.Screen name="mainApp" component={mainApp} options={{ headerShown: false }} />
+      {token && user ? (
+  <Stack.Screen name="mainApp" component={mainApp} options={{ headerShown: false }}/>
+) : (
+  <Stack.Screen name="Login" component={Login} options={{ headerShown: false }}/>
+)}
       <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
-      <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
       <Stack.Screen name="Find" component={Find} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
       <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Postingan yang Diikuti' }} />
@@ -169,7 +178,7 @@ const Router = () => {
       <Stack.Screen name="VerifTelepon" component={Verif2} options={{ headerShown: false}} />
       <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false}} />
       <Stack.Screen name="Comment" component={Komen} options={{ headerShown: false}} />
-      <Stack.Screen name="Join" component={Join} options={{ headerShown: 'false' }} />
+      <Stack.Screen name="Join" component={Join} options={{ headerShown: false }} />
       <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Notifikasi" component={NotificationScreen} options={{ headerTitle: 'Notifikasi' }} />
     </Stack.Navigator>
@@ -177,13 +186,21 @@ const Router = () => {
 };
 
 const styles = StyleSheet.create({
+  headerIconsChat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 5,
+  },
+  iconChat: {
+    marginRight: 10,
+  },
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 25,
   },
   icon: {
-    marginRight: 30,
+    marginRight: 40,
   },
   modalOverlay: {
     flex: 1,

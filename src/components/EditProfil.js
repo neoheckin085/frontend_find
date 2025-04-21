@@ -100,12 +100,6 @@ const EditProfil = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Instagram"
-        value={instagram}
-        onChangeText={setInstagram}
-      />
 
       <Button
         title="Simpan"

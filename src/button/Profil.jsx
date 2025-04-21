@@ -4,8 +4,29 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import Logokecil from '../assets/Favian.png'
 import babelConfig from '../../babel.config';
 import Logobesar from '../assets/makassar.jpg'
+import { useAuth } from '../../context/AuthContext';
 
 const Profil = () => {
+  const [detailUser, setDetailUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState({});
+  const { getUserById, token } = useAuth();
+  
+  useEffect(() => {
+    const fetchUser = async () => {
+        const userId = 2; // bisa juga pakai ID dari user login kalau kamu simpan di context
+        getUserById(userId, token, setDetailUser, setError, setLoading);
+    };
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    if (detailUser) {
+      console.log('User berhasil dimuat:', detailUser);
+    }
+  }, [detailUser]);
+
+
   return (
     <View style={{flex: 1}}>
     <StatusBar barStyle={'light-content'} backgroundColor="#212121"/>
@@ -31,9 +52,12 @@ const Profil = () => {
      />
      </View>
       <View style={{marginTop: 60}}>
-        <Text style={{fontWeight: 'bold', fontSize: 20, textAlign: 'center'}}>Muhammad Rif'atul Anam</Text>
-        <Text style={{ textAlign: 'center'}}>Tidak dapat bicara, F!ND saja
-        </Text>
+        <Text style={{fontWeight: 'bold', fontSize: 20, textAlign: 'center'}}>
+        {detailUser?.name || 'Nama tidak tersedia'}</Text>
+        <Text style={{ textAlign: 'center' }}>
+       {'Tidak dapat bicara, F!ND saja'}
+      </Text>
+
         <View style={{marginLeft: 120}}>
         <View 
         style={{
@@ -52,8 +76,8 @@ const Profil = () => {
           <Icon name="whatsapp" size={25} color="black" />
           </View>
         <View style={{justifyContent: 'center', marginLeft: 10, flex: 1}}>
-          <Text style={{fontWeight: 'bold'}}>+6281-2345-6789</Text>
-          </View>
+        <Text style={{fontWeight: 'bold'}}>{detailUser?.nomor_telepon || 'Nomor tidak tersedia'}</Text>
+        </View>
         </View>
         <View 
         style={{
@@ -70,8 +94,8 @@ const Profil = () => {
           <Icon name="map-marker" size={25} color="black" />
           </View>
         <View style={{justifyContent: 'center', marginLeft: 10, flex: 1}}>
-          <Text style={{fontWeight: 'bold'}}>Makassar</Text>
-          </View>
+        <Text style={{fontWeight: 'bold'}}>{detailUser?.lokasi || 'Lokasi tidak tersedia'}</Text>
+        </View>
         </View>
         <View 
         style={{
@@ -88,7 +112,7 @@ const Profil = () => {
           <Icon name="envelope-o" size={25} color="black" />
           </View>
         <View style={{justifyContent: 'center', marginLeft: 10, flex: 1}}>
-          <Text style={{fontWeight: 'bold'}}>findgammara@gmail.com</Text>
+        <Text style={{fontWeight: 'bold'}}> {detailUser?.email || 'Email tidak tersedia'}</Text>
           </View>
         </View>
         <View 
@@ -103,10 +127,6 @@ const Profil = () => {
             width: 40,
             height: 40
           }}>
-          <Icon name="instagram" size={25} color="black" />
-          </View>
-        <View style={{justifyContent: 'center', marginLeft: 10, flex: 1}}>
-          <Text style={{fontWeight: 'bold'}}>find.id</Text>
           </View>
         </View>
         </View>
