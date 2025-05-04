@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, Platform, Modal, TouchableHighlight } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import NotificationScreen from '../components/Notifikasi'; 
-
+import NotificationScreen from '../components/Notifikasi';
+import EmojiSelector from 'react-native-emoji-selector'; // Import emoji selector
 
 const messages = [
   { id: '1', name: 'psmfans1915', sender: 'Eqi', message: 'adakah nobar', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s', isUnread: true, allMessages: ['Eqi: Halo', 'Eqi: Apa kabar?'] },
@@ -37,6 +37,8 @@ const Messages = ({ route, navigation }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [chatMessages, setChatMessages] = useState([...allMessages || [], `${sender}: ${message}`]);
 
+  const [emojiModalVisible, setEmojiModalVisible] = useState(false);
+
   React.useLayoutEffect(() => {
     if (name) {
       navigation.setOptions({ title: name });
@@ -48,6 +50,11 @@ const Messages = ({ route, navigation }) => {
       setChatMessages([...chatMessages, `Anda: ${inputMessage}`]);
       setInputMessage('');
     }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    setInputMessage(inputMessage + emoji);
+    setEmojiModalVisible(false); // Close emoji modal
   };
 
   return (
@@ -68,6 +75,9 @@ const Messages = ({ route, navigation }) => {
         }}
       />
       <View style={styles.inputContainer}>
+        <TouchableOpacity onPress={() => setEmojiModalVisible(true)} style={styles.emojiButton}>
+          <Text style={styles.emojiText}>😊</Text>
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={inputMessage}
@@ -76,6 +86,24 @@ const Messages = ({ route, navigation }) => {
         />
         <Button title="Kirim" onPress={handleSendMessage} />
       </View>
+
+      {/* Emoji Modal */}
+      <Modal
+        visible={emojiModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setEmojiModalVisible(false)}
+      >
+        <TouchableOpacity style={styles.modalBackground} onPress={() => setEmojiModalVisible(false)}>
+          <View style={styles.emojiModal}>
+            {/* Using EmojiSelector */}
+            <EmojiSelector
+              onEmojiSelected={handleEmojiSelect}
+              showSearchBar={true} // Optional: adds search bar to find emojis
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -85,23 +113,22 @@ const App = ( {navigation} ) => {
   return (
     <Stack.Navigator>
       <Stack.Screen
-  name="ChatList"
-  component={ChatList}
-  options={{
-    title: 'Pesan',
-    headerLeft: () => null, 
-    headerRight: () => (
-      <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
-        <FontAwesome name="bell" size={22} color="#808080" style={styles.icon}/>
-      </TouchableOpacity>
-    ),
-  }}
-/>
+        name="ChatList"
+        component={ChatList}
+        options={{
+          title: 'Pesan',
+          headerLeft: () => null, 
+          headerRight: () => (
+            <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
+              <FontAwesome name="bell" size={22} color="#808080" style={styles.icon}/>
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <Stack.Screen name="Messages" component={Messages} />
     </Stack.Navigator>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -184,6 +211,25 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 20,
+  },
+  emojiButton: {
+    marginRight: 10,
+  },
+  emojiText: {
+    fontSize: 24,
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  emojiModal: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '90%',
+    height: '70%',
   },
 });
 

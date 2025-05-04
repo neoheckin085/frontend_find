@@ -1,10 +1,18 @@
 import { View, Text, ImageBackground, Image } from 'react-native';
 import React, { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const Find = ({ navigation }) => {
+  const {token, user} = useAuth()
+  
   useEffect(() => {
     setTimeout(() => {
-      navigation.replace('Login'); 
+      console.log(token, user);
+      if (token && user) {
+      navigation.replace('mainApp'); 
+      } else {
+        navigation.replace('Login');
+      }
     }, 3000);
   }, [navigation]);
 

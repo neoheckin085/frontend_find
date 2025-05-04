@@ -10,56 +10,96 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
 const screenWidth = Dimensions.get('window').width;
 const imageSize = screenWidth / 3;
 
-const dummyData = Array(60).fill(require('../assets/logoliquid.jpg'));
-
-// Dummy akun untuk simulasi hasil pencarian/history
-const dummyAccounts = [
-  { id: '1', username: 'esl_indonesia', name: 'ESL Indonesia' },
-  { id: '2', username: 'eslmlbb', name: 'ESL Mobile Legends: Bang Bang' },
-  { id: '3', username: 'mpl.id.official', name: 'MPL Indonesia', verified: true, followers: '7,2JT' },
-  { id: '4', username: 'sobrut.el.braga', name: 'El Braga' },
-  { id: '5', username: 'mpl.ph', name: 'MPL Philippines' },
-  { id: '6', username: 'mdl.indonesia', name: 'MDL Indonesia' },
+// Dummy komunitas untuk simulasi
+const dummyCommunities = [
+  {
+    id: '1',
+    name: 'TL Cavalary',
+    members: 123,
+    description: 'Komunitas pecinta tim Liquid dari seluruh dunia.',
+    logo: require('../assets/logoliquid.jpg'),
+    images: [require('../assets/logoliquid.jpg'), require('../assets/logoliquid.jpg')],
+  },
+  {
+    id: '2',
+    name: 'IkasiMakassar',
+    members: 8000,
+    description: 'Komunitas pecinta olahraga di Makassar',
+    logo: require('../assets/IkasiMakassar.png'),
+    images: [require('../assets/IkasiMakassar.png')],
+  },
+  {
+    id: '3',
+    name: 'Psm Fans',
+    members: 8000,
+    description: 'Komunitas supporter PSM Makassar',
+    logo: require('../assets/PsmFans.png'),
+    images: [require('../assets/PsmFans.png')],
+  },
 ];
 
 const ExploreScreen = () => {
   const [search, setSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [history, setHistory] = useState(dummyAccounts);
+  const [history, setHistory] = useState([]);
+  const navigation = useNavigation();
 
-  const renderGridItem = ({ item }) => (
-    <TouchableOpacity style={styles.imageWrapper}>
-      <Image source={item} style={styles.image} resizeMode="cover" />
-    </TouchableOpacity>
-  );
-
-  const renderHistoryItem = ({ item }) => (
-    <View style={styles.historyItem}>
-      <View style={styles.userInfo}>
-        <Ionicons name="person-circle-outline" size={40} color="#000" />
-        <View style={{ marginLeft: 10 }}>
-          <Text style={styles.username}>{item.username}</Text>
-          <Text style={styles.name}>{item.name}</Text>
-        </View>
-      </View>
-      <TouchableOpacity onPress={() => handleRemoveHistory(item.id)}>
-        <Ionicons name="close" size={22} color="#888" />
-      </TouchableOpacity>
-    </View>
+  const filteredCommunities = dummyCommunities.filter(
+    (item) =>
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.description.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleRemoveHistory = (id) => {
     setHistory(prev => prev.filter(item => item.id !== id));
   };
 
+  const handleSelectCommunity = (community) => {
+    // Tambahkan ke history jika belum ada
+    setHistory((prev) => {
+      const exists = prev.find((item) => item.id === community.id);
+      if (exists) return prev;
+      return [community, ...prev];
+    });
+
+    // Navigate ke halaman Join
+    navigation.navigate('Join', { community });
+  };
+
   const handleBack = () => {
     setIsSearching(false);
     setSearch('');
   };
+
+  const renderHistoryItem = ({ item }) => (
+    <TouchableOpacity onPress={() => handleSelectCommunity(item)} style={styles.historyItem}>
+      <View style={styles.userInfo}>
+        <Image source={item.logo} style={{ width: 40, height: 40, borderRadius: 20 }} />
+        <View style={{ marginLeft: 10 }}>
+          <Text style={styles.username}>{item.name}</Text>
+          <Text style={styles.name}>{item.description}</Text>
+        </View>
+      </View>
+      <TouchableOpacity onPress={() => handleRemoveHistory(item.id)}>
+        <Ionicons name="close" size={22} color="#888" />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
+  const renderGridItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.imageWrapper}
+      onPress={() => handleSelectCommunity(item)}
+    >
+      <Image source={item.logo} style={styles.image} resizeMode="cover" />
+    </TouchableOpacity>
+  );
+  
 
   return (
     <View style={styles.container}>
@@ -74,7 +114,7 @@ const ExploreScreen = () => {
         )}
 
         <TextInput
-          placeholder="Cari"
+          placeholder="Cari komunitas"
           placeholderTextColor="#888"
           style={styles.searchInput}
           value={search}
@@ -86,21 +126,26 @@ const ExploreScreen = () => {
         />
       </View>
 
-      {/* Tampilan hasil pencarian/history */}
+      {/* History atau Hasil Pencarian */}
       {isSearching ? (
         <View style={styles.historyContainer}>
           <FlatList
-            data={history}
+            data={search.trim() === '' ? history : filteredCommunities}
             keyExtractor={(item) => item.id}
             renderItem={renderHistoryItem}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListEmptyComponent={() => (
+              <Text style={{ textAlign: 'center', marginTop: 20, color: '#888' }}>
+                Tidak ditemukan.
+              </Text>
+            )}
           />
         </View>
       ) : (
         <FlatList
-          data={dummyData}
+          data={dummyCommunities}
           renderItem={renderGridItem}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item) => item.id}
           numColumns={3}
           showsVerticalScrollIndicator={false}
         />

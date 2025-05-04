@@ -48,6 +48,7 @@ const mainApp = ({ navigation }) => {
 
   const handleLogout = () => {
     closeProfileModal();
+    console.log(token, user);
     logout(navigation);
   };
 
@@ -161,7 +162,7 @@ const Router = () => {
   }
   
   return (
-    <Stack.Navigator initialRouteName={user && token ? 'mainApp' : 'Find'}>
+    <Stack.Navigator>
       {token && user ? (
   <Stack.Screen name="mainApp" component={mainApp} options={{ headerShown: false }}/>
 ) : (
