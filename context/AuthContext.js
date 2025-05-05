@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import axios from 'axios';
+import { View, Text, StyleSheet, ActivityIndicator, Platform, Image } from 'react-native';
 import Api from '../libs/Api';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthContext = createContext();
@@ -53,11 +53,11 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (name, email, password, nomor_telepon, navigation) => {
+    const register = async (username, email, password, nomor_telepon, navigation) => {
         setError({});
         try {
             const response = await Api.post('/register', {
-                name,
+                username,
                 email,
                 password,
                 nomor_telepon,
@@ -85,14 +85,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const getUserById = async (id, token, setUser, setError, setLoading) => {
+    const getUserById = async (id, setUser, setError, setLoading) => {
         setError({});
         setLoading(true);
         try {
+            const storedToken = await AsyncStorage.getItem('token');
             const response = await Api.get(`/tampilkan/${id}`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${storedToken}` }
               });
               setUser(response.data);
         } catch (e) {
@@ -105,6 +104,22 @@ export const AuthProvider = ({ children }) => {
             } else {
                 setError({ general: 'Something went wrong. Please try again later.' });
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getAllPosts = async (setPosts, setError, setLoading) => {
+        setError({});
+        setLoading(true);
+        try {
+            const storedToken = await AsyncStorage.getItem('token');
+           const response = await Api.get(`/posts`, {
+                headers: { Authorization: `Bearer ${storedToken}` }
+              });
+              setPosts(response.data);
+        } catch (error) {
+            throw error.response.data;
         } finally {
             setLoading(false);
         }
@@ -197,3 +212,89 @@ const styles = StyleSheet.create({
         textAlign: 'center' 
     }
 });
+
+const postApi = {
+
+    createPost: async (postData) => {
+        try {
+            const formData = new FormData();
+            formData.append('title', postData.title);
+            formData.append('description', postData.description);
+            formData.append('community_id', postData.community_id);
+            formData.append('user_id', postData.user_id);
+
+            if (postData.image) {
+                formData.append('image', {
+                    uri: postData.image,
+                    type: 'image/jpeg',
+                    name: 'post_image.jpg'
+                });
+            }
+
+            const response = await axios.post(`${API_URL}/posts`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },
+
+    addComment: async (commentData) => {
+        try {
+            const response = await axios.post(`${API_URL}/comments`, commentData);
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },      
+
+    getComments: async (postId) => {
+        try {
+            const response = await axios.get(`${API_URL}/posts/${postId}/comments`);
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },
+
+    deleteComment: async (commentId) => {
+        try {
+            const response = await axios.delete(`${API_URL}/comments/${commentId}`);
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },
+
+    getPost: async (postId) => {
+        try {
+            const response = await axios.get(`${API_URL}/posts/${postId}`);
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },
+
+    updatePost: async (postId, postData) => {
+        try {
+            const response = await axios.put(`${API_URL}/posts/${postId}`, postData);
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },
+
+    deletePost: async (postId) => {
+        try {
+            const response = await axios.delete(`${API_URL}/posts/${postId}`);
+            return response.data;
+        } catch (error) {
+            throw error.response.data;
+        }
+    },
+};
+
+export { postApi };

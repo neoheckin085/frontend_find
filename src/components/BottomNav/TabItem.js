@@ -19,11 +19,11 @@ const TabItem = ({isFocused,onPress,label,onLongPress}) => {
    <Icon name="map" size={30} color ="gray"/>
  );
 }
- if (label === 'Search') {
+ if (label === 'Post') {
   return isFocused?(
-   <Icon name="search" size={40} color ="black"/>
+   <Icon name="plus-square" size={40} color ="black"/>
 ):(
-<Icon name="search" size={30} color ="gray"/>
+<Icon name="plus-square" size={30} color ="gray"/>
 );
      }
      if (label === 'Chat') {

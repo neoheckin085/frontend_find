@@ -7,14 +7,14 @@ const CreateAccount = ({ navigation }) => {
   const [email, setEmail] = useState('');
    const [password, setPassword] = useState('');
    const [nomor_telepon, setNomor] = useState('');
-   const [name, setName] = useState('');
+   const [username, setName] = useState('');
    const [pressed, setPressed] = useState(false);
    const [createPress, setCreatePressed] = useState(false);
 
     const { register, error } = useAuth();
     
     const handleRegister = () => {
-      register(name, email, password, nomor_telepon, navigation);
+      register(username, email, password, nomor_telepon, navigation);
       navigation.navigate('Login');
     };
   
@@ -56,7 +56,7 @@ const CreateAccount = ({ navigation }) => {
               <TextInput
                 placeholder="Username"
                 placeholderTextColor="#000"
-                value={name}
+                value={username}
                 onChangeText={setName}
                 style={styles.input}
               />

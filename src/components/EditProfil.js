@@ -24,10 +24,6 @@ const EditProfil = ({ navigation }) => {
           text: 'Edit Profil Kecil',
           onPress: () => setSelectedImage(Logokecil), 
         },
-        {
-          text: 'Edit Profil Besar',
-          onPress: () => openGalleryForLargeImage(), 
-        },
         { text: 'Batal', style: 'cancel' },
       ],
       { cancelable: true }
@@ -50,15 +46,8 @@ const EditProfil = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Logo besar tetap di background */}
-      <ImageBackground
-        source={selectedLargeImage} 
-        style={styles.backgroundImage}
-        resizeMode='cover'
-      >
-      </ImageBackground>
 
-      {/* Gambar profil kecil yang bisa diganti */}
+      {/* Gambar profil yang bisa diganti */}
       <TouchableOpacity style={styles.kecil} onPress={handleImageChange}>
         <Image
           source={selectedImage} 

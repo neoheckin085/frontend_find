@@ -106,22 +106,28 @@ const ExploreScreen = () => {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         {isSearching ? (
+          // Tombol Back muncul saat searching aktif
           <TouchableOpacity onPress={handleBack}>
             <Ionicons name="arrow-back" size={22} color="#333" style={styles.searchIcon} />
           </TouchableOpacity>
         ) : (
-          <Ionicons name="search-outline" size={22} color="#888" style={styles.searchIcon} />
+          // Tombol Search muncul saat searching tidak aktif
+          <Ionicons name="arrow-back"
+          size={24}
+          color="#333"
+          style={styles.icon}
+          onPress={() => navigation.goBack()} />
         )}
-
+        
         <TextInput
           placeholder="Cari komunitas"
           placeholderTextColor="#888"
           style={styles.searchInput}
           value={search}
-          onFocus={() => setIsSearching(true)}
+          onFocus={() => setIsSearching(true)} 
           onChangeText={(text) => {
             setSearch(text);
-            setIsSearching(true);
+            setIsSearching(true); 
           }}
         />
       </View>
