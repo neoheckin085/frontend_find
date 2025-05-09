@@ -21,7 +21,7 @@ const EditProfil = ({ navigation }) => {
       'Pilih gambar profil yang ingin digunakan',
       [
         {
-          text: 'Edit Profil Kecil',
+          text: 'Edit Foto Profil ',
           onPress: () => setSelectedImage(Logokecil), 
         },
         { text: 'Batal', style: 'cancel' },

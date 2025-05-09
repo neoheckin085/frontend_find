@@ -1,158 +1,225 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ImageBackground, KeyboardAvoidingView } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    Image,
+    StyleSheet,
+    ImageBackground,
+    KeyboardAvoidingView,
+    ActivityIndicator,
+    Platform
+} from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
 const Login = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { logs, error, token, user } = useAuth();
-  const [pressed, setPressed] = useState(false);
-  const [createPress, setCreatePressed] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const { logs, error, token, user } = useAuth();
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleLogin = () => {
-   logs(email, password);
-   navigation.navigate('mainApp');
-  };
+    const handleLogin = async () => {
+        if (isLoggingIn || !email || !password) {
+            if (!email || !password) {
+            }
+            return;
+        }
+        setIsLoggingIn(true);
 
-  useEffect(() => {
-    if (pressed) {
-      navigation.navigate('mainApp');
-    }
-    if (createPress) {
-      navigation.replace('Register');
-    }
-    if (token && user) {
-      navigation.navigate('Splash');
-    }
-  }, [pressed, createPress, token, user, navigation]);
+        const loginSuccessful = await logs(email, password);
 
-  return (
-    <KeyboardAvoidingView style={styles.container} behavior='padding'>
-      <ImageBackground source={require('../assets/Hitam.png')} style={styles.background}>
-        <KeyboardAvoidingView style={styles.logoContainer}>
-          <Image source={require('../assets/Find.png')} style={styles.logo} />
+        setIsLoggingIn(false);
+
+        if (loginSuccessful) {
+            console.log("Login successful. Router will handle navigation to MainApp.");
+        } else {
+            console.log("Login failed. Errors should be displayed from context's 'error' state.");
+        }
+    };
+
+    useEffect(() => {
+    }, [navigation]);
+
+
+    const displayContextErrors = () => {
+        if (error && typeof error === 'object' && Object.keys(error).length > 0) {
+            if (error.email || error.password || error.general) {
+                 return Object.entries(error).map(([key, value]) => {
+                    const messages = Array.isArray(value) ? value.join(', ') : value;
+                    return <Text key={key} style={styles.errorText}>{`${key !== 'general' ? key + ': ' : ''}${messages}`}</Text>;
+                });
+            }
+            return <Text style={styles.errorText}>{JSON.stringify(error)}</Text>;
+        }
+        return null;
+    };
+
+    return (
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+            <ImageBackground source={require('../assets/Hitam.png')} style={styles.background} resizeMode="cover">
+                <View style={styles.logoContainer}>
+                    <Image source={require('../assets/Find.png')} style={styles.logo} />
+                </View>
+
+                <View style={styles.loginFormContainer}>
+                    <Text style={styles.loginTitle}>Login</Text>
+
+                    {displayContextErrors()}
+
+                    <TextInput
+                        placeholder="Email"
+                        placeholderTextColor="#555"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        style={styles.input}
+                        editable={!isLoggingIn}
+                    />
+
+                    <TextInput
+                        placeholder="Password"
+                        placeholderTextColor="#555"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        style={styles.input}
+                        editable={!isLoggingIn}
+                    />
+
+                    <TouchableOpacity
+                        style={[styles.loginButton, isLoggingIn && styles.buttonDisabled]}
+                        onPress={handleLogin}
+                        disabled={isLoggingIn}
+                    >
+                        {isLoggingIn ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.loginButtonText}>Login</Text>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => navigation.navigate('SearchAccount')} disabled={isLoggingIn}>
+                        <Text style={styles.linkText}>Forget password?</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.createAccountButton, isLoggingIn && styles.buttonDisabled]}
+                        onPress={() => navigation.replace('Register')}
+                        disabled={isLoggingIn}
+                    >
+                        <Text style={styles.createAccountText}>Create account</Text>
+                    </TouchableOpacity>
+                </View>
+            </ImageBackground>
         </KeyboardAvoidingView>
-
-        <KeyboardAvoidingView style={styles.loginContainer} behavior='padding'>
-          <Text style={styles.loginTitle}>Login</Text>
-
-          <TextInput
-            placeholder="Email"
-            placeholderTextColor="#000"
-            value={email}
-            onChangeText={text => setEmail(text)}
-            keyboardType="email-address"
-            style={styles.input}
-          />
-          {error.email && <Text style={{ color: 'red' }}>{error.email[0]}</Text>}
-
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#000"
-            value={password}
-            onChangeText={text => setPassword(text)}
-            secureTextEntry
-            style={styles.input}
-          />
-          {error.password && <Text style={{ color: 'red' }}>{error.password[0]}</Text>}
-
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Login</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.navigate('SearchAccount')}>
-            <Text style={styles.forgetPasswordText}>Forget password?</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.createAccountButton} onPress={() => setCreatePressed(true)}>
-            <Text style={styles.createAccountText}>Create account</Text>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </ImageBackground>
-    </KeyboardAvoidingView>
-  );
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 2,
-  },
-  background: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  logo: {
-    width: 250,
-    height: 250,
-  },
-  loginContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    flexDirection: 'column',
-    padding: '15%',
-    alignItems: 'center',
-    borderTopLeftRadius: 100,
-    height: '75%',
-  },
-  loginTitle: {
-    fontSize: 38,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    color: '#000',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  loginButton: {
-    width: '100%',
-    backgroundColor: '#000',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  forgetPasswordText: {
-    color: '#000',
-    fontSize: 14,
-    marginTop: '2%',
-    textAlign: 'center',
-  },
-  createAccountButton: {
-    width: '100%',
-    backgroundColor: '#000',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: '55%',
-  },
-  createAccountText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+    container: {
+        flex: 1,
+    },
+    background: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: 30,
+        justifyContent: 'center',
+    },
+    logo: {
+        width: 200,
+        height: 200,
+        resizeMode: 'contain',
+    },
+    loginFormContainer: {
+        width: '85%',
+        maxWidth: 400,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: 20,
+        padding: 25,
+        alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    loginTitle: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 25,
+    },
+    input: {
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        marginBottom: 15,
+        backgroundColor: '#fff',
+        color: '#333',
+        fontSize: 16,
+    },
+    loginButton: {
+        width: '100%',
+        backgroundColor: '#000',
+        paddingVertical: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 4,
+    },
+    buttonDisabled: {
+        backgroundColor: '#aaa',
+    },
+    loginButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    linkText: {
+        color: '#007AFF',
+        fontSize: 14,
+        marginTop: 10,
+        textAlign: 'center',
+    },
+    createAccountButton: {
+        width: '100%',
+        backgroundColor: '#555',
+        paddingVertical: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    createAccountText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 14,
+        marginBottom: 10,
+        textAlign: 'center',
+        width: '100%',
+    }
 });
 
 export default Login;

@@ -67,7 +67,7 @@ export default function GoogleMapsScreen() {
         />
         <TextInput
           style={styles.searchInput}
-          placeholder="Cari lokasi.."
+          placeholder="search for a location.."
           placeholderTextColor="#666"
           value={searchText}
           onChangeText={setSearchText}

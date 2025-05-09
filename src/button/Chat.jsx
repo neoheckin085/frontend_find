@@ -116,7 +116,7 @@ const App = ( {navigation} ) => {
         name="ChatList"
         component={ChatList}
         options={{
-          title: 'Pesan',
+          title: 'Chat',
           headerLeft: () => null, 
           headerRight: () => (
             <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>

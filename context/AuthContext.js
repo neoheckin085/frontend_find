@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
-import { View, Text, StyleSheet, ActivityIndicator, Platform, Image } from 'react-native';
+import { Platform } from 'react-native';
 import Api from '../libs/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -13,50 +12,91 @@ export const AuthProvider = ({ children }) => {
     const [error, setError] = useState({});
 
     useEffect(() => {
-        const fetchUser = async () => {
+        const bootstrapAsync = async () => {
+            let userToken;
             try {
-                const storedToken = await AsyncStorage.getItem('token');
-                if (storedToken) {
-                    setToken(storedToken);
-                    const response = await Api.get('/user', {
-                        headers: { Authorization: `Bearer ${storedToken}` },
-                    });
-                    setUser(response.data).then(u => console.log('User sekarang adalah:', u));
-                    AsyncStorage.getItem('token').then(t => console.log('Token dari storage:', t));
+                userToken = await AsyncStorage.getItem('token');
+                if (userToken) {
+                    setToken(userToken);
+                    try {
+                        const response = await Api.get('/user', {
+                            headers: { Authorization: `Bearer ${userToken}` },
+                        });
+
+                        if (response.data && response.data.user) {
+                            setUser(response.data.user);
+                        } else if (response.data) {
+                            setUser(response.data);
+                        } else {
+                            console.warn("User data from API is not in expected format.");
+                            await AsyncStorage.removeItem('token');
+                            setToken(null);
+                            setUser(null);
+                        }
+                        console.log('User from storage/API:', response.data.user || response.data);
+                    } catch (e) {
+                        console.error("Failed to fetch user with stored token:", e);
+                        await AsyncStorage.removeItem('token');
+                        setToken(null);
+                        setUser(null);
+                    }
                 }
-            } catch (err) {
-                setUser(null);
+            } catch (e) {
+                console.error("Error retrieving token from storage:", e);
             } finally {
                 setLoading(false);
             }
         };
-        fetchUser();
+
+        bootstrapAsync();
     }, []);
-    
 
     const logs = async (email, password) => {
         setError({});
         try {
+            console.log('Attempting login with:', { email, device_name: `${Platform.OS} ${Platform.Version}` });
             const response = await Api.post('/login', {
                 email,
                 password,
                 device_name: `${Platform.OS} ${Platform.Version}`,
             });
-            const { token, user } = response.data;
-            await AsyncStorage.setItem('token', token);
-            setToken(token);
-            setUser(user);
-        } catch (e) {
-            if (e.response.status === 422) {
-                setError(e.response.data.errors);
+
+            console.log('Login response:', response.data);
+
+            if (response.data?.token && response.data?.user) {
+                await AsyncStorage.setItem('token', response.data.token);
+                setToken(response.data.token);
+                setUser(response.data.user);
+                return true;
+            } else {
+                console.error("Invalid response structure:", response.data);
+                setError({ general: 'Invalid server response structure' });
+                return false;
             }
+        } catch (e) {
+            console.error('Login error:', {
+                status: e.response?.status,
+                data: e.response?.data,
+                message: e.message
+            });
+
+            if (e.response?.status === 422 && e.response?.data?.errors) {
+                setError(e.response.data.errors);
+            } else if (e.response?.data?.message) {
+                setError({ general: e.response.data.message });
+            } else if (!e.response) {
+                setError({ general: 'Network error. Please check your connection.' });
+            } else {
+                setError({ general: 'Login failed. Invalid credentials.' });
+            }
+            return false;
         }
     };
 
     const register = async (username, email, password, nomor_telepon, navigation) => {
         setError({});
         try {
-            const response = await Api.post('/register', {
+            await Api.post('/register', {
                 username,
                 email,
                 password,
@@ -64,62 +104,63 @@ export const AuthProvider = ({ children }) => {
                 device_name: `${Platform.OS} ${Platform.Version}`,
             });
             navigation.replace('Login');
+            return true;
         } catch (e) {
-            if (e.response.status === 422) {
+            if (e.response && e.response.status === 422 && e.response.data && e.response.data.errors) {
                 setError(e.response.data.errors);
+            } else if (e.response && e.response.data && e.response.data.message) {
+                setError({ general: e.response.data.message });
+            } else {
+                setError({ general: 'Registration failed. Please try again.' });
             }
+            return false;
         }
     };
 
+    // const post = async (title, description, image, community_id, user_id) => {
+    //     setError({});
+
     const logout = async (navigation) => {
+        setError({});
         try {
-            await Api.post('/logout', {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const storedToken = await AsyncStorage.getItem('token');
+            if (storedToken) {
+                await Api.post('/logout', {}, {
+                    headers: { Authorization: `Bearer ${storedToken}` },
+                });
+            }
+        } catch (error) {
+            console.log('API Logout error (will proceed with local logout):', error.response ? error.response.data : error.message);
+        } finally {
             await AsyncStorage.removeItem('token');
             setToken(null);
             setUser(null);
-            navigation.replace('Login');
-        } catch (error) {
-            console.log('Logout error:', error);
-        }
-    };
-
-    const getUserById = async (id, setUser, setError, setLoading) => {
-        setError({});
-        setLoading(true);
-        try {
-            const storedToken = await AsyncStorage.getItem('token');
-            const response = await Api.get(`/tampilkan/${id}`, {
-                headers: { Authorization: `Bearer ${storedToken}` }
-              });
-              setUser(response.data);
-        } catch (e) {
-            if (e.response && e.response.status === 404) {
-                setError({ notFound: 'User not found.' });
-            } else if (e.response && e.response.status === 401) {
-                setError({ auth: 'Unauthorized access. Please login again.' });
-            } else if (e.response && e.response.data && e.response.data.errors) {
-                setError(e.response.data.errors);
+            if (navigation) {
+                navigation.replace('Login');
             } else {
-                setError({ general: 'Something went wrong. Please try again later.' });
+                console.warn("Logout called without navigation object.");
             }
-        } finally {
-            setLoading(false);
         }
     };
 
-    const getAllPosts = async (setPosts, setError, setLoading) => {
-        setError({});
-        setLoading(true);
+    const getUserById = async (setDetailUser, setError, setLoading) => {
         try {
             const storedToken = await AsyncStorage.getItem('token');
-           const response = await Api.get(`/posts`, {
-                headers: { Authorization: `Bearer ${storedToken}` }
-              });
-              setPosts(response.data);
-        } catch (error) {
-            throw error.response.data;
+            if (!storedToken) {
+                throw new Error('No token found');
+            }
+    
+            const response = await Api.get('/tampilkan', {
+                headers: {
+                    Authorization: `Bearer ${storedToken}`,
+                },
+            });
+    
+            console.log('User data response:', response.data); 
+            setDetailUser(response.data);
+        } catch (err) {
+            console.error('Error getUserById:', err);
+            setError({ message: err.message || 'Failed to fetch user data' });
         } finally {
             setLoading(false);
         }
@@ -129,12 +170,12 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             user,
             token,
+            loading,
+            error,
             logs,
             logout,
             register,
-            error,
-            loading,
-            getUserById
+            getUserById, 
         }}>
             {children}
         </AuthContext.Provider>
@@ -142,159 +183,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-
-// ✅ Komponen UserDetail tetap di file ini, tapi DI LUAR fungsi AuthProvider
-export const UserDetail = ({ route }) => {
-    const [detailUser, setDetailUser] = useState(null);
-    const [error, setError] = useState({});
-    const [loading, setLoading] = useState(false);
-    const { getUserById } = useAuth();
-    const userId = route?.params?.id || 2;
-
-    useEffect(() => {
-        const fetch = async () => {
-            const token = await AsyncStorage.getItem('token');
-            if (token) {
-                getUserById(userId, setDetailUser, setError, setLoading);
-            } else {
-                setError({ auth: 'No token found. Please login first.' });
-            }
-        };
-        fetch();
-    }, []);
-
-    if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
-
-    if (Object.keys(error).length > 0) {
-        return (
-            <View style={styles.container}>
-                <Text style={styles.errorText}>{Object.values(error).join('\n')}</Text>
-            </View>
-        );
-    }
-
-    if (!detailUser) return null;
-
-    return (
-        <View style={styles.container}>
-            <Text style={styles.label}>Nama:</Text>
-            <Text style={styles.value}>{detailUser.name}</Text>
-
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{detailUser.email}</Text>
-
-            <Text style={styles.label}>Nomor Telepon:</Text>
-            <Text style={styles.value}>{detailUser.nomor_telepon}</Text>
-
-            <Text style={styles.label}>Lokasi :</Text>
-            <Text style={styles.value}>{detailUser.lokasi}</Text>
-        </View>
-    );
-};
-
-const styles = StyleSheet.create({
-    container: { 
-        padding: 20, 
-        flex: 1, 
-        backgroundColor: '#fff' 
-    },
-    label: { 
-        fontWeight: 'bold', 
-        marginTop: 10, 
-        fontSize: 16 
-    },
-    value: { 
-        fontSize: 16, 
-        marginBottom: 5 
-    },
-    errorText: { 
-        color: 'red', 
-        textAlign: 'center' 
-    }
-});
-
-const postApi = {
-
-    createPost: async (postData) => {
-        try {
-            const formData = new FormData();
-            formData.append('title', postData.title);
-            formData.append('description', postData.description);
-            formData.append('community_id', postData.community_id);
-            formData.append('user_id', postData.user_id);
-
-            if (postData.image) {
-                formData.append('image', {
-                    uri: postData.image,
-                    type: 'image/jpeg',
-                    name: 'post_image.jpg'
-                });
-            }
-
-            const response = await axios.post(`${API_URL}/posts`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },
-
-    addComment: async (commentData) => {
-        try {
-            const response = await axios.post(`${API_URL}/comments`, commentData);
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },      
-
-    getComments: async (postId) => {
-        try {
-            const response = await axios.get(`${API_URL}/posts/${postId}/comments`);
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },
-
-    deleteComment: async (commentId) => {
-        try {
-            const response = await axios.delete(`${API_URL}/comments/${commentId}`);
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },
-
-    getPost: async (postId) => {
-        try {
-            const response = await axios.get(`${API_URL}/posts/${postId}`);
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },
-
-    updatePost: async (postId, postData) => {
-        try {
-            const response = await axios.put(`${API_URL}/posts/${postId}`, postData);
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },
-
-    deletePost: async (postId) => {
-        try {
-            const response = await axios.delete(`${API_URL}/posts/${postId}`);
-            return response.data;
-        } catch (error) {
-            throw error.response.data;
-        }
-    },
-};
-
-export { postApi };
