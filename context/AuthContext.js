@@ -25,11 +25,20 @@ export const AuthProvider = ({ children }) => {
 
                         if (response.data && response.data.user) {
                             setUser(response.data.user);
+                            // Store user_id for chat functionality if not already stored
+                            if (response.data.user.user_id) {
+                                await AsyncStorage.setItem('userId', response.data.user.user_id.toString());
+                            }
                         } else if (response.data) {
                             setUser(response.data);
+                            // Store user_id for chat functionality if not already stored
+                            if (response.data.user_id) {
+                                await AsyncStorage.setItem('userId', response.data.user_id.toString());
+                            }
                         } else {
                             console.warn("User data from API is not in expected format.");
                             await AsyncStorage.removeItem('token');
+                            await AsyncStorage.removeItem('userId');
                             setToken(null);
                             setUser(null);
                         }
@@ -37,6 +46,7 @@ export const AuthProvider = ({ children }) => {
                     } catch (e) {
                         console.error("Failed to fetch user with stored token:", e);
                         await AsyncStorage.removeItem('token');
+                        await AsyncStorage.removeItem('userId');
                         setToken(null);
                         setUser(null);
                     }
@@ -65,6 +75,10 @@ export const AuthProvider = ({ children }) => {
 
             if (response.data?.token && response.data?.user) {
                 await AsyncStorage.setItem('token', response.data.token);
+                // Store user_id for chat functionality
+                if (response.data.user.user_id) {
+                    await AsyncStorage.setItem('userId', response.data.user.user_id.toString());
+                }
                 setToken(response.data.token);
                 setUser(response.data.user);
                 return true;
@@ -117,8 +131,38 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // const post = async (title, description, image, community_id, user_id) => {
-    //     setError({});
+    const post = async (formData) => {
+        setError({});
+        try {
+            const storedToken = await AsyncStorage.getItem('token');
+            if (!storedToken) {
+                throw new Error('No token found');
+            }
+
+            const response = await Api.post('/post', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${storedToken}`
+                }
+            });
+
+            return { success: true, data: response.data };
+        } catch (e) {
+            console.error('Post error:', e.response ? e.response.data : e.message);
+            
+            if (e.response?.status === 422 && e.response?.data?.errors) {
+                setError(e.response.data.errors);
+            } else if (e.response?.data?.message) {
+                setError({ general: e.response.data.message });
+            } else if (!e.response) {
+                setError({ general: 'Network error. Please check your connection.' });
+            } else {
+                setError({ general: 'Failed to create post. Please try again.' });
+            }
+            
+            return { success: false, error: e.response?.data || { message: e.message } };
+        }
+    };
 
     const logout = async (navigation) => {
         setError({});
@@ -133,6 +177,7 @@ export const AuthProvider = ({ children }) => {
             console.log('API Logout error (will proceed with local logout):', error.response ? error.response.data : error.message);
         } finally {
             await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('userId'); // Remove userId as well
             setToken(null);
             setUser(null);
             if (navigation) {
@@ -175,7 +220,8 @@ export const AuthProvider = ({ children }) => {
             logs,
             logout,
             register,
-            getUserById, 
+            getUserById,
+            post,
         }}>
             {children}
         </AuthContext.Provider>

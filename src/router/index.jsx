@@ -77,8 +77,7 @@ const MainApp = ({ navigation }) => {
               <TouchableOpacity onPress={openFindModal} style={{ alignItems: 'center', paddingVertical: 10 }}>
                 <Text style={styles.headerTitleText}>F1ND</Text>
               </TouchableOpacity>
-            ),
-            headerRight: () => (
+            ),            headerRight: () => (
               <View style={styles.headerIcons}>
                 <TouchableOpacity onPress={() => navigation.navigate('Search')}>
                   <Icon name="search" size={26} color="#333" style={styles.icon} />
