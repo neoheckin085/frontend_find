@@ -1,52 +1,71 @@
+// taruh di D:\find\frontend_find\src\components\BottomNav\index.js
+
 import { View, Text, Platform } from 'react-native'
-import { useLinkBuilder, useTheme } from '@react-navigation/native';
-import { PlatformPressable } from '@react-navigation/elements';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useTheme } from '@react-navigation/native';
 import TabItem from './TabItem';
 import React from 'react'
 
 const BottomNav = ({state, descriptors, navigation}) => {
-    const { colors } = useTheme();
-    const { buildHref } = useLinkBuilder();
-  
-    return (
-    <View style={{flexDirection: 'column', borderWidth:1, borderRadius: 50, marginHorizontal: 30, minHeight: 80, alignContent: 'center'}}>
-       <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 'auto', marginHorizontal: 30, flex: 1}}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-              ? options.title
-              : route.name;
+  const { colors } = useTheme();
 
-        const isFocused = state.index === index;
+  return (
+    <View style={{
+      flexDirection: 'column',
+      borderWidth: 1,
+      borderRadius: 50,
+      marginHorizontal: 30,
+      minHeight: 80,
+      alignContent: 'center',
+      backgroundColor: colors.card
+    }}>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 'auto',
+        marginHorizontal: 30,
+        flex: 1
+      }}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+                ? options.title
+                : route.name;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
+          const isFocused = state.index === index;
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
-          }
-        };
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-        const onLongPress = () => {
-          navigation.emit({
-            type: 'tabLongPress',
-            target: route.key,
-          });
-        };
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        return (
-            <TabItem key={index} label={label} onPress={onPress} onLongPress={onLongPress}  isFocused={isFocused}/>
-        );
-      })}
-    </View>
+          const onLongPress = () => {
+            navigation.emit({
+              type: 'tabLongPress',
+              target: route.key,
+            });
+          };
+
+          return (
+            <TabItem 
+              key={index} 
+              label={label} 
+              isFocused={isFocused}
+              onPress={onPress}
+              onLongPress={onLongPress}
+            />
+          );
+        })}
+      </View>
     </View>
   )
 }

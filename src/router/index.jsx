@@ -1,3 +1,5 @@
+// taruh di D:\find\frontend_find\src\router\index.jsx
+
 import { View, Text, Button, Image, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import Splash from '../button/Splash';
@@ -77,8 +79,7 @@ const MainApp = ({ navigation }) => {
               <TouchableOpacity onPress={openFindModal} style={{ alignItems: 'center', paddingVertical: 10 }}>
                 <Text style={styles.headerTitleText}>F1ND</Text>
               </TouchableOpacity>
-            ),
-            headerRight: () => (
+            ),            headerRight: () => (
               <View style={styles.headerIcons}>
                 <TouchableOpacity onPress={() => navigation.navigate('Search')}>
                   <Icon name="search" size={26} color="#333" style={styles.icon} />

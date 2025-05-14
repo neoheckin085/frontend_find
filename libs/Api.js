@@ -1,9 +1,11 @@
 import axios from 'axios';
-const Api = axios.create({
-baseURL: 'http://10.214.56.17:8080/api',
-headers: {
-'Content-Type': 'application/json',
+import API_CONFIG from '../src/config/apiConfig';
 
-},
+const Api = axios.create({
+  baseURL: API_CONFIG.getApiUrl(),
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
-export default Api; 
+
+export default Api;

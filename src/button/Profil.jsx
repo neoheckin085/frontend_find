@@ -1,25 +1,44 @@
+// D:\find\frontend_find\src\button\Profil.jsx
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, StatusBar, Image, ImageBackground, ActivityIndicator } from 'react-native';
+import { View, Text, StatusBar, Image, ImageBackground, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import Logokecil from '../assets/Favian.png';
+import Logokecil from '../assets/default-avatar.png';
 import Logobesar from '../assets/makassar.jpg';
 import { useAuth } from '../../context/AuthContext';
+import API_CONFIG from '../../src/config/apiConfig';
 
 const Profil = () => {
   const [detailUser, setDetailUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState({});
+  const [refreshing, setRefreshing] = useState(false);
   const { getUserById, token, user } = useAuth();
+
+  const fetchUserData = async () => {
+    if (token) {
+      await getUserById(setDetailUser, setError, setLoading);
+    }
+  };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchUserData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const userId = user?.id;
+      const userId = user?.user_id;
       if (token) {
-        await getUserById(setDetailUser, setError, setLoading);
+        await fetchUserData();
       }
     };
     fetchUser();
-  }, []);
+  }, [token, user?.user_id]);
 
   useEffect(() => {
     if (detailUser) {
@@ -28,46 +47,69 @@ const Profil = () => {
   }, [detailUser]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar barStyle={'light-content'} backgroundColor="#212121" />
-      
-      <ImageBackground source={Logobesar} style={{ flex: 0.5, opacity: 0.9 }} resizeMode={'cover'}>
-        <View style={{ flex: 0.5 }} />
+    <ScrollView
+      style={{ flex: 1 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["#000"]} // For Android
+          tintColor="#000" // For iOS
+        />
+      }
+    >
+      <StatusBar backgroundColor="#000" barStyle="light-content" />
+
+      {/* Background Image */}
+      <ImageBackground
+        source={
+          detailUser?.background 
+            ? { uri: API_CONFIG.getStorageUrl(detailUser.background) }
+            : Logobesar
+        }
+        style={{ width: '100%', height: 200 }}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} />
       </ImageBackground>
 
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={{
+          alignItems: 'center',
+          marginTop: -50,
+          padding: 15,
+        }}>
+          {/* Profile Picture */}
           <Image
-            source={Logokecil}
+            source={
+              detailUser?.photo 
+                ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) }
+                : Logokecil
+            }
             style={{
               width: 100,
               height: 100,
-              borderRadius: 100 / 2,
+              borderRadius: 50,
               borderWidth: 3,
-              borderColor: '#FFFFFF',
-              position: 'absolute',
-              zIndex: 2
+              borderColor: '#fff'
             }}
           />
-        </View>
 
-        <View style={{ marginTop: 60 }}>
-          {loading ? (
+          {loading && !refreshing ? (
             <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
-          ) : error.message ? (
+          ) : error?.message ? (
             <Text style={{ color: 'red', textAlign: 'center' }}>Gagal memuat data: {error.message}</Text>
           ) : (
             <>
-              <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center', marginTop: 10 }}>
                 {detailUser?.name || 'Nama tidak tersedia'}
               </Text>
-              <Text style={{ textAlign: 'center' }}>
-                Tidak dapat bicara, F!ND saja
+              <Text style={{ textAlign: 'center', marginTop: 5, color: '#666' }}>
+                {detailUser?.tentang || 'Tidak dapat bicara, F!ND saja'}
               </Text>
 
-              <View style={{ marginLeft: 120 }}>
+              <View style={{ marginLeft: 20, marginTop: 20, width: '100%' }}>
                 {/* Nomor */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
                   <View style={{ justifyContent: 'center', alignItems: 'center', width: 40, height: 40 }}>
                     <Icon name="whatsapp" size={25} color="black" />
                   </View>
@@ -77,7 +119,7 @@ const Profil = () => {
                 </View>
 
                 {/* Lokasi */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
                   <View style={{ justifyContent: 'center', alignItems: 'center', width: 40, height: 40 }}>
                     <Icon name="map-marker" size={25} color="black" />
                   </View>
@@ -87,7 +129,7 @@ const Profil = () => {
                 </View>
 
                 {/* Email */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
                   <View style={{ justifyContent: 'center', alignItems: 'center', width: 40, height: 40 }}>
                     <Icon name="envelope-o" size={25} color="black" />
                   </View>
@@ -100,7 +142,7 @@ const Profil = () => {
           )}
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
