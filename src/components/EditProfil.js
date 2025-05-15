@@ -1,14 +1,16 @@
 // D:\find\frontend_find\src\components\EditProfil.js
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback, ImageBackground, Keyboard, StyleSheet } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import API_CONFIG from '../../src/config/apiConfig';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const EditProfil = ({ navigation }) => {
   const { user, updateProfile, getUserById, token } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [tentang, setTentang] = useState(user?.tentang || '');
   const [whatsapp, setWhatsapp] = useState(user?.nomor_telepon || '');
@@ -22,12 +24,20 @@ const EditProfil = ({ navigation }) => {
   const [displayBackground, setDisplayBackground] = useState(null);
   const [detailUser, setDetailUser] = useState(null);
   const [fetchError, setFetchError] = useState(null);
+  
+  // Field validations
+  const [errors, setErrors] = useState({
+    email: '',
+    whatsapp: '',
+  });
 
   // Fetch user data directly 
   const fetchUserData = async () => {
+    setLoading(true);
     if (token) {
       await getUserById(setDetailUser, setFetchError, () => {});
     }
+    setLoading(false);
   };
 
   // Initialize from detailUser data
@@ -57,7 +67,37 @@ const EditProfil = ({ navigation }) => {
     fetchUserData();
   }, [token]);
 
+  // Validate email on change
+  const validateEmail = (text) => {
+    setEmail(text);
+    if (text) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(text)) {
+        setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      } else {
+        setErrors(prev => ({ ...prev, email: '' }));
+      }
+    } else {
+      setErrors(prev => ({ ...prev, email: '' }));
+    }
+  };
+
+  // Validate phone number on change
+  const validateWhatsapp = (text) => {
+    setWhatsapp(text);
+    if (text) {
+      if (!/^\d+$/.test(text)) {
+        setErrors(prev => ({ ...prev, whatsapp: 'Phone number should contain only digits' }));
+      } else {
+        setErrors(prev => ({ ...prev, whatsapp: '' }));
+      }
+    } else {
+      setErrors(prev => ({ ...prev, whatsapp: '' }));
+    }
+  };
+
   const openPhotoModal = () => {
+    Keyboard.dismiss();
     setPhotoModalVisible(true);
   };
 
@@ -66,6 +106,7 @@ const EditProfil = ({ navigation }) => {
   };
   
   const openBackgroundModal = () => {
+    Keyboard.dismiss();
     setBackgroundModalVisible(true);
   };
 
@@ -114,23 +155,14 @@ const EditProfil = ({ navigation }) => {
   };
 
   const handleSave = async () => {
-    setLoading(true);
+    // Check for validation errors first
+    if (errors.email || errors.whatsapp) {
+      Alert.alert('Validation Error', 'Please fix the errors before saving.');
+      return;
+    }
+    
+    setSaving(true);
     try {
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (email && !emailRegex.test(email)) {
-        Alert.alert('Validation Error', 'Please enter a valid email address');
-        setLoading(false);
-        return;
-      }
-      
-      // Validate phone number format (simple validation)
-      if (whatsapp && !/^\d+$/.test(whatsapp)) {
-        Alert.alert('Validation Error', 'Phone number should contain only digits');
-        setLoading(false);
-        return;
-      }
-
       const userData = {
         name,
         tentang,
@@ -169,73 +201,38 @@ const EditProfil = ({ navigation }) => {
       console.error('Error in handleSave:', error);
       Alert.alert('Error', error.message || 'Something went wrong');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity style={styles.photoContainer} onPress={openPhotoModal}>
-        <Image
-          source={photo ? 
-            (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
-            displayPhoto ? { uri: displayPhoto } : 
-            detailUser?.photo ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) } :
-            require('../assets/default-avatar.png')}
-          style={styles.profilePhoto}
-        />
-        <Text style={styles.changePhotoText}>Change Profile Photo</Text>
-      </TouchableOpacity>
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#000" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
 
-      <TouchableOpacity style={styles.backgroundContainer} onPress={openBackgroundModal}>
-        {background ? 
-          (background.deleted ? 
-            (background.useProfilePhoto && detailUser?.photo ? 
-              <ImageBackground
-                source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
-                style={styles.backgroundPhoto}
-                blurRadius={5}
-              />
-              : 
-              <ImageBackground
-                source={require('../assets/default-avatar.png')} 
-                style={styles.backgroundPhoto}
-                blurRadius={5}
-              />
-            ) 
-            : 
-            <Image
-              source={{ uri: background.uri }}
-              style={styles.backgroundPhoto}
-            />
-          ) 
-          : displayBackground ? 
-            (displayBackground === API_CONFIG.getStorageUrl(detailUser?.photo) ?
-              <ImageBackground
-                source={{ uri: displayBackground }}
-                style={styles.backgroundPhoto}
-                blurRadius={5}
-              />
-              :
-              <Image
-                source={{ uri: displayBackground }}
-                style={styles.backgroundPhoto}
-              />
-            )
-            : detailUser?.background ? 
-              (detailUser?.background === detailUser?.photo ?
-                <ImageBackground
-                  source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
-                  style={styles.backgroundPhoto}
-                  blurRadius={5}
-                />
-                :
-                <Image
-                  source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
-                  style={styles.backgroundPhoto}
-                />
-              )
-              : detailUser?.photo ? 
+  return (
+    <View>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity style={styles.photoContainer} onPress={openPhotoModal}>
+          <Image
+            source={photo ? 
+              (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
+              displayPhoto ? { uri: displayPhoto } : 
+              detailUser?.photo ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) } :
+              require('../assets/default-avatar.png')}
+            style={styles.profilePhoto}
+          />
+          <Text style={styles.changePhotoText}>Change Profile Photo</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.backgroundContainer} onPress={openBackgroundModal}>
+          {background ? 
+            (background.deleted ? 
+              (background.useProfilePhoto && detailUser?.photo ? 
                 <ImageBackground
                   source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
                   style={styles.backgroundPhoto}
@@ -243,13 +240,133 @@ const EditProfil = ({ navigation }) => {
                 />
                 : 
                 <ImageBackground
-                  source={require('../assets/default-avatar.png')}
+                  source={require('../assets/default-avatar.png')} 
                   style={styles.backgroundPhoto}
                   blurRadius={5}
                 />
-        }
-        <Text style={styles.changePhotoText}>Change Background Photo</Text>
-      </TouchableOpacity>
+              ) 
+              : 
+              <Image
+                source={{ uri: background.uri }}
+                style={styles.backgroundPhoto}
+              />
+            ) 
+            : displayBackground ? 
+              (displayBackground === API_CONFIG.getStorageUrl(detailUser?.photo) ?
+                <ImageBackground
+                  source={{ uri: displayBackground }}
+                  style={styles.backgroundPhoto}
+                  blurRadius={5}
+                />
+                :
+                <Image
+                  source={{ uri: displayBackground }}
+                  style={styles.backgroundPhoto}
+                />
+              )
+              : detailUser?.background ? 
+                (detailUser?.background === detailUser?.photo ?
+                  <ImageBackground
+                    source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
+                    style={styles.backgroundPhoto}
+                    blurRadius={5}
+                  />
+                  :
+                  <Image
+                    source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
+                    style={styles.backgroundPhoto}
+                  />
+                )
+                : detailUser?.photo ? 
+                  <ImageBackground
+                    source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
+                    style={styles.backgroundPhoto}
+                    blurRadius={5}
+                  />
+                  : 
+                  <ImageBackground
+                    source={require('../assets/default-avatar.png')}
+                    style={styles.backgroundPhoto}
+                    blurRadius={5}
+                  />
+          }
+          <Text style={styles.changePhotoText}>Change Background Photo</Text>
+        </TouchableOpacity>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.inputLabel}>Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your name"
+            value={name}
+            onChangeText={setName}
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.inputLabel}>About</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Tell us about yourself"
+            value={tentang}
+            onChangeText={setTentang}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.inputLabel}>WhatsApp</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your WhatsApp number"
+            value={whatsapp}
+            onChangeText={validateWhatsapp}
+            keyboardType="phone-pad"
+          />
+          {errors.whatsapp ? (
+            <Text style={styles.errorText}>{errors.whatsapp}</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.inputLabel}>Location</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your location"
+            value={lokasi}
+            onChangeText={setLokasi}
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.inputLabel}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email address"
+            value={email}
+            onChangeText={validateEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {errors.email ? (
+            <Text style={styles.errorText}>{errors.email}</Text>
+          ) : null}
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.saveButton, (saving || Boolean(errors.email) || Boolean(errors.whatsapp)) && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={saving || Boolean(errors.email) || Boolean(errors.whatsapp)}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
       
       {/* Profile Photo Options Modal */}
       <Modal
@@ -280,14 +397,20 @@ const EditProfil = ({ navigation }) => {
                   style={styles.bottomSheetOption} 
                   onPress={() => handleImagePicker(true)}
                 >
-                  <Text style={styles.bottomSheetOptionText}>Choose from Gallery</Text>
+                  <View style={styles.optionContent}>
+                    <Icon name="photo-library" size={24} color="#007AFF" />
+                    <Text style={styles.bottomSheetOptionText}>Choose from Gallery</Text>
+                  </View>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.bottomSheetOption} 
                   onPress={handleDeletePhoto}
                 >
-                  <Text style={styles.bottomSheetOptionText}>Delete Photo</Text>
+                  <View style={styles.optionContent}>
+                    <Icon name="delete" size={24} color="#FF3B30" />
+                    <Text style={styles.deleteOptionText}>Delete Photo</Text>
+                  </View>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
@@ -383,14 +506,20 @@ const EditProfil = ({ navigation }) => {
                   style={styles.bottomSheetOption} 
                   onPress={() => handleImagePicker(false)}
                 >
-                  <Text style={styles.bottomSheetOptionText}>Choose from Gallery</Text>
+                  <View style={styles.optionContent}>
+                    <Icon name="photo-library" size={24} color="#007AFF" />
+                    <Text style={styles.bottomSheetOptionText}>Choose from Gallery</Text>
+                  </View>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.bottomSheetOption} 
                   onPress={handleDeleteBackground}
                 >
-                  <Text style={styles.bottomSheetOptionText}>Delete Photo</Text>
+                  <View style={styles.optionContent}>
+                    <Icon name="delete" size={24} color="#FF3B30" />
+                    <Text style={styles.deleteOptionText}>Delete Photo</Text>
+                  </View>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
@@ -404,61 +533,27 @@ const EditProfil = ({ navigation }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="About"
-        value={tentang}
-        onChangeText={setTentang}
-        multiline
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="WhatsApp"
-        value={whatsapp}
-        onChangeText={setWhatsapp}
-        keyboardType="phone-pad"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Location"
-        value={lokasi}
-        onChangeText={setLokasi}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-
-      <TouchableOpacity 
-        style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-        onPress={handleSave}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.saveButtonText}>Save Changes</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 };
 
-const styles = {
+// Use StyleSheet.create for better performance
+const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#555',
   },
   photoContainer: {
     alignItems: 'center',
@@ -484,13 +579,31 @@ const styles = {
     color: '#007AFF',
     fontSize: 16,
   },
+  formGroup: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 15,
-    marginBottom: 15,
     fontSize: 16,
+    backgroundColor: '#fafafa',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  errorText: {
+    color: '#ff3b30',
+    fontSize: 12,
+    marginTop: 5,
   },
   saveButton: {
     backgroundColor: '#000',
@@ -498,6 +611,7 @@ const styles = {
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 20,
+    marginBottom: 30,
   },
   saveButtonDisabled: {
     opacity: 0.7,
@@ -531,9 +645,19 @@ const styles = {
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   bottomSheetOptionText: {
     fontSize: 16,
     color: '#007AFF',
+    marginLeft: 12,
+  },
+  deleteOptionText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    marginLeft: 12,
   },
   cancelButton: {
     marginTop: 20,
@@ -559,6 +683,6 @@ const styles = {
     height: 200,
     borderRadius: 10,
   },
-};
+});
 
 export default EditProfil;
