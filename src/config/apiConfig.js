@@ -15,6 +15,7 @@ const API_CONFIG = {
     
     // Jika path sudah berisi URL lengkap, kembalikan apa adanya
     if (path.startsWith('http')) {
+      console.log('getStorageUrl - already complete URL:', path);
       return path;
     }
     
@@ -23,16 +24,22 @@ const API_CONFIG = {
     
     // Jika path dimulai dengan 'storage/', maka ini adalah path yang disimpan oleh Laravel
     if (cleanPath.startsWith('storage/')) {
-      return `${this.BASE_URL}/${cleanPath}`;
+      const fullUrl = `${this.BASE_URL}/${cleanPath}`;
+      console.log('getStorageUrl - storage/ path:', { original: path, result: fullUrl });
+      return fullUrl;
     }
     
     // Jika path dimulai dengan /storage/ (sesuai dengan format yang disimpan di authController)
     if (path.startsWith('/storage/')) {
       const storageCleanPath = path.substring(1); // Hilangkan slash awal
-      return `${this.BASE_URL}/${storageCleanPath}`;
+      const fullUrl = `${this.BASE_URL}/${storageCleanPath}`;
+      console.log('getStorageUrl - /storage/ path:', { original: path, result: fullUrl });
+      return fullUrl;
     }
     
-    return `${this.BASE_URL}/${cleanPath}`;
+    const fullUrl = `${this.BASE_URL}/${cleanPath}`;
+    console.log('getStorageUrl - other path:', { original: path, result: fullUrl });
+    return fullUrl;
   }
 };
 

@@ -65,9 +65,16 @@ const Profil = () => {
         source={
           detailUser?.background 
             ? { uri: API_CONFIG.getStorageUrl(detailUser.background) }
-            : Logobesar
+            : detailUser?.photo
+              ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) }
+              : Logokecil
         }
         style={{ width: '100%', height: 200 }}
+        blurRadius={
+          detailUser?.background && detailUser?.background !== detailUser?.photo
+            ? 0  // Jika pengguna menggunakan background yang diatur sendiri
+            : 5  // Blur untuk semua kasus lainnya (menggunakan foto profil atau default)
+        }
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} />
       </ImageBackground>

@@ -1,7 +1,7 @@
 // D:\find\frontend_find\src\components\EditProfil.js
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback, ImageBackground } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import API_CONFIG from '../../src/config/apiConfig';
@@ -109,7 +109,7 @@ const EditProfil = ({ navigation }) => {
   };
   
   const handleDeleteBackground = () => {
-    setBackground({ uri: null, deleted: true });
+    setBackground({ uri: null, deleted: true, useProfilePhoto: true });
     closeBackgroundModal();
   };
 
@@ -138,7 +138,9 @@ const EditProfil = ({ navigation }) => {
         lokasi,
         email,
         photo: photo?.deleted ? { deleted: true } : photo,
-        background
+        background: background?.deleted ? 
+          (background.useProfilePhoto ? { deleted: true, use_profile_photo: true } : { deleted: true }) 
+          : background
       };
 
       console.log('Submitting profile data:', userData);
@@ -186,14 +188,66 @@ const EditProfil = ({ navigation }) => {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.backgroundContainer} onPress={openBackgroundModal}>
-        <Image
-          source={background ? 
-            (background.deleted ? require('../assets/default-background.png') : { uri: background.uri }) : 
-            displayBackground ? { uri: displayBackground } :
-            detailUser?.background ? { uri: API_CONFIG.getStorageUrl(detailUser.background) } : 
-            require('../assets/default-background.png')}
-          style={styles.backgroundPhoto}
-        />
+        {background ? 
+          (background.deleted ? 
+            (background.useProfilePhoto && detailUser?.photo ? 
+              <ImageBackground
+                source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
+                style={styles.backgroundPhoto}
+                blurRadius={5}
+              />
+              : 
+              <ImageBackground
+                source={require('../assets/default-avatar.png')} 
+                style={styles.backgroundPhoto}
+                blurRadius={5}
+              />
+            ) 
+            : 
+            <Image
+              source={{ uri: background.uri }}
+              style={styles.backgroundPhoto}
+            />
+          ) 
+          : displayBackground ? 
+            (displayBackground === API_CONFIG.getStorageUrl(detailUser?.photo) ?
+              <ImageBackground
+                source={{ uri: displayBackground }}
+                style={styles.backgroundPhoto}
+                blurRadius={5}
+              />
+              :
+              <Image
+                source={{ uri: displayBackground }}
+                style={styles.backgroundPhoto}
+              />
+            )
+            : detailUser?.background ? 
+              (detailUser?.background === detailUser?.photo ?
+                <ImageBackground
+                  source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
+                  style={styles.backgroundPhoto}
+                  blurRadius={5}
+                />
+                :
+                <Image
+                  source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
+                  style={styles.backgroundPhoto}
+                />
+              )
+              : detailUser?.photo ? 
+                <ImageBackground
+                  source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
+                  style={styles.backgroundPhoto}
+                  blurRadius={5}
+                />
+                : 
+                <ImageBackground
+                  source={require('../assets/default-avatar.png')}
+                  style={styles.backgroundPhoto}
+                  blurRadius={5}
+                />
+        }
         <Text style={styles.changePhotoText}>Change Background Photo</Text>
       </TouchableOpacity>
       
@@ -263,14 +317,66 @@ const EditProfil = ({ navigation }) => {
                 
                 {/* Add background photo preview */}
                 <View style={styles.photoPreviewContainer}>
-                  <Image
-                    source={background ? 
-                      (background.deleted ? require('../assets/default-background.png') : { uri: background.uri }) : 
-                      displayBackground ? { uri: displayBackground } : 
-                      detailUser?.background ? { uri: API_CONFIG.getStorageUrl(detailUser.background) } :
-                      require('../assets/default-background.png')}
-                    style={styles.backgroundPreview}
-                  />
+                  {background ? 
+                    (background.deleted ? 
+                      (background.useProfilePhoto && detailUser?.photo ? 
+                        <ImageBackground
+                          source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
+                          style={styles.backgroundPreview}
+                          blurRadius={5}
+                        />
+                        : 
+                        <ImageBackground
+                          source={require('../assets/default-avatar.png')} 
+                          style={styles.backgroundPreview}
+                          blurRadius={5}
+                        />
+                      ) 
+                      : 
+                      <Image
+                        source={{ uri: background.uri }}
+                        style={styles.backgroundPreview}
+                      />
+                    ) 
+                    : displayBackground ? 
+                      (displayBackground === API_CONFIG.getStorageUrl(detailUser?.photo) ?
+                        <ImageBackground
+                          source={{ uri: displayBackground }}
+                          style={styles.backgroundPreview}
+                          blurRadius={5}
+                        />
+                        :
+                        <Image
+                          source={{ uri: displayBackground }}
+                          style={styles.backgroundPreview}
+                        />
+                      )
+                      : detailUser?.background ? 
+                        (detailUser?.background === detailUser?.photo ?
+                          <ImageBackground
+                            source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
+                            style={styles.backgroundPreview}
+                            blurRadius={5}
+                          />
+                          :
+                          <Image
+                            source={{ uri: API_CONFIG.getStorageUrl(detailUser.background) }}
+                            style={styles.backgroundPreview}
+                          />
+                        )
+                        : detailUser?.photo ? 
+                          <ImageBackground
+                            source={{ uri: API_CONFIG.getStorageUrl(detailUser.photo) }}
+                            style={styles.backgroundPreview}
+                            blurRadius={5}
+                          />
+                          : 
+                          <ImageBackground
+                            source={require('../assets/default-avatar.png')}
+                            style={styles.backgroundPreview}
+                            blurRadius={5}
+                          />
+                  }
                 </View>
                 
                 <TouchableOpacity 

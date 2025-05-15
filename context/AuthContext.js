@@ -232,6 +232,11 @@ export const AuthProvider = ({ children }) => {
                         if (userData[key] && userData[key].deleted) {
                             // Handle deleted photo case
                             formData.append(`delete_${key}`, 'true');
+                            
+                            // Handle use_profile_photo flag for background
+                            if (key === 'background' && userData[key].use_profile_photo) {
+                                formData.append('use_profile_photo', 'true');
+                            }
                         } else if (userData[key] && userData[key].uri) {
                             // Get file extension from URI
                             const uriParts = userData[key].uri.split('.');
