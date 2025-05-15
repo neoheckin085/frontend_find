@@ -229,7 +229,10 @@ export const AuthProvider = ({ children }) => {
             Object.keys(userData).forEach(key => {
                 if (userData[key] !== null && userData[key] !== undefined) {
                     if (key === 'photo' || key === 'background') {
-                        if (userData[key] && userData[key].uri) {
+                        if (userData[key] && userData[key].deleted) {
+                            // Handle deleted photo case
+                            formData.append(`delete_${key}`, 'true');
+                        } else if (userData[key] && userData[key].uri) {
                             // Get file extension from URI
                             const uriParts = userData[key].uri.split('.');
                             const fileType = uriParts[uriParts.length - 1];

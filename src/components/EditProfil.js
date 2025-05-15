@@ -1,7 +1,7 @@
 // D:\find\frontend_find\src\components\EditProfil.js
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator, Modal, TouchableWithoutFeedback } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import API_CONFIG from '../../src/config/apiConfig';
@@ -16,8 +16,21 @@ const EditProfil = ({ navigation }) => {
   const [email, setEmail] = useState(user?.email || '');
   const [photo, setPhoto] = useState(null);
   const [background, setBackground] = useState(null);
+  const [photoModalVisible, setPhotoModalVisible] = useState(false);
+
+  const openPhotoModal = () => {
+    setPhotoModalVisible(true);
+  };
+
+  const closePhotoModal = () => {
+    setPhotoModalVisible(false);
+  };
 
   const handleImagePicker = async (isProfile = true) => {
+    if (isProfile) {
+      closePhotoModal();
+    }
+    
     const options = {
       mediaType: 'photo',
       quality: 1,
@@ -39,6 +52,11 @@ const EditProfil = ({ navigation }) => {
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
     }
+  };
+  
+  const handleDeletePhoto = () => {
+    setPhoto({ uri: null, deleted: true });
+    closePhotoModal();
   };
   const handleSave = async () => {
     setLoading(true);
@@ -64,7 +82,7 @@ const EditProfil = ({ navigation }) => {
         nomor_telepon: whatsapp,
         lokasi,
         email,
-        photo,
+        photo: photo?.deleted ? { deleted: true } : photo,
         background
       };
 
@@ -100,9 +118,12 @@ const EditProfil = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity style={styles.photoContainer} onPress={() => handleImagePicker(true)}>
+      <TouchableOpacity style={styles.photoContainer} onPress={openPhotoModal}>
         <Image
-          source={photo ? { uri: photo.uri } : user?.photo ? { uri: API_CONFIG.getStorageUrl(user.photo) } : require('../assets/default-avatar.png')}
+          source={photo ? 
+            (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
+            user?.photo ? { uri: API_CONFIG.getStorageUrl(user.photo) } : 
+            require('../assets/default-avatar.png')}
           style={styles.profilePhoto}
         />
         <Text style={styles.changePhotoText}>Change Profile Photo</Text>
@@ -115,6 +136,45 @@ const EditProfil = ({ navigation }) => {
         />
         <Text style={styles.changePhotoText}>Change Background Photo</Text>
       </TouchableOpacity>
+      
+      {/* Profile Photo Options Modal */}
+      <Modal
+        visible={photoModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closePhotoModal}
+      >
+        <TouchableWithoutFeedback onPress={closePhotoModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.bottomSheet}>
+                <Text style={styles.bottomSheetTitle}>Profile Photo</Text>
+                
+                <TouchableOpacity 
+                  style={styles.bottomSheetOption} 
+                  onPress={() => handleImagePicker(true)}
+                >
+                  <Text style={styles.bottomSheetOptionText}>Choose from Gallery</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.bottomSheetOption} 
+                  onPress={handleDeletePhoto}
+                >
+                  <Text style={styles.bottomSheetOptionText}>Delete Photo</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={closePhotoModal}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       <TextInput
         style={styles.input}
@@ -212,6 +272,44 @@ const styles = {
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // Bottom sheet styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  bottomSheet: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 30,
+  },
+  bottomSheetTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  bottomSheetOption: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  bottomSheetOptionText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  cancelButton: {
+    marginTop: 20,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: 'red',
     fontWeight: 'bold',
   },
 };
