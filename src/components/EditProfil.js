@@ -7,7 +7,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import API_CONFIG from '../../src/config/apiConfig';
 
 const EditProfil = ({ navigation }) => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, getUserById, token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [tentang, setTentang] = useState(user?.tentang || '');
@@ -17,6 +17,45 @@ const EditProfil = ({ navigation }) => {
   const [photo, setPhoto] = useState(null);
   const [background, setBackground] = useState(null);
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
+  const [backgroundModalVisible, setBackgroundModalVisible] = useState(false);
+  const [displayPhoto, setDisplayPhoto] = useState(null);
+  const [displayBackground, setDisplayBackground] = useState(null);
+  const [detailUser, setDetailUser] = useState(null);
+  const [fetchError, setFetchError] = useState(null);
+
+  // Fetch user data directly 
+  const fetchUserData = async () => {
+    if (token) {
+      await getUserById(setDetailUser, setFetchError, () => {});
+    }
+  };
+
+  // Initialize from detailUser data
+  useEffect(() => {
+    if (detailUser) {
+      if (detailUser.photo) {
+        const photoUrl = API_CONFIG.getStorageUrl(detailUser.photo);
+        setDisplayPhoto(photoUrl);
+      }
+      
+      if (detailUser.background) {
+        const backgroundUrl = API_CONFIG.getStorageUrl(detailUser.background);
+        setDisplayBackground(backgroundUrl);
+      }
+      
+      // Also update other fields if not already set
+      if (!name && detailUser.name) setName(detailUser.name);
+      if (!tentang && detailUser.tentang) setTentang(detailUser.tentang);
+      if (!whatsapp && detailUser.nomor_telepon) setWhatsapp(detailUser.nomor_telepon);
+      if (!lokasi && detailUser.lokasi) setLokasi(detailUser.lokasi);
+      if (!email && detailUser.email) setEmail(detailUser.email);
+    }
+  }, [detailUser]);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    fetchUserData();
+  }, [token]);
 
   const openPhotoModal = () => {
     setPhotoModalVisible(true);
@@ -25,10 +64,20 @@ const EditProfil = ({ navigation }) => {
   const closePhotoModal = () => {
     setPhotoModalVisible(false);
   };
+  
+  const openBackgroundModal = () => {
+    setBackgroundModalVisible(true);
+  };
+
+  const closeBackgroundModal = () => {
+    setBackgroundModalVisible(false);
+  };
 
   const handleImagePicker = async (isProfile = true) => {
     if (isProfile) {
       closePhotoModal();
+    } else {
+      closeBackgroundModal();
     }
     
     const options = {
@@ -58,6 +107,12 @@ const EditProfil = ({ navigation }) => {
     setPhoto({ uri: null, deleted: true });
     closePhotoModal();
   };
+  
+  const handleDeleteBackground = () => {
+    setBackground({ uri: null, deleted: true });
+    closeBackgroundModal();
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -122,16 +177,21 @@ const EditProfil = ({ navigation }) => {
         <Image
           source={photo ? 
             (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
-            user?.photo ? { uri: API_CONFIG.getStorageUrl(user.photo) } : 
+            displayPhoto ? { uri: displayPhoto } : 
+            detailUser?.photo ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) } :
             require('../assets/default-avatar.png')}
           style={styles.profilePhoto}
         />
         <Text style={styles.changePhotoText}>Change Profile Photo</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.backgroundContainer} onPress={() => handleImagePicker(false)}>
+      <TouchableOpacity style={styles.backgroundContainer} onPress={openBackgroundModal}>
         <Image
-          source={background ? { uri: background.uri } : user?.background ? { uri: API_CONFIG.getStorageUrl(user.background) } : require('../assets/default-background.png')}
+          source={background ? 
+            (background.deleted ? require('../assets/default-background.png') : { uri: background.uri }) : 
+            displayBackground ? { uri: displayBackground } :
+            detailUser?.background ? { uri: API_CONFIG.getStorageUrl(detailUser.background) } : 
+            require('../assets/default-background.png')}
           style={styles.backgroundPhoto}
         />
         <Text style={styles.changePhotoText}>Change Background Photo</Text>
@@ -150,6 +210,18 @@ const EditProfil = ({ navigation }) => {
               <View style={styles.bottomSheet}>
                 <Text style={styles.bottomSheetTitle}>Profile Photo</Text>
                 
+                {/* Add profile photo preview */}
+                <View style={styles.photoPreviewContainer}>
+                  <Image
+                    source={photo ? 
+                      (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
+                      displayPhoto ? { uri: displayPhoto } : 
+                      detailUser?.photo ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) } :
+                      require('../assets/default-avatar.png')}
+                    style={styles.photoPreview}
+                  />
+                </View>
+                
                 <TouchableOpacity 
                   style={styles.bottomSheetOption} 
                   onPress={() => handleImagePicker(true)}
@@ -167,6 +239,57 @@ const EditProfil = ({ navigation }) => {
                 <TouchableOpacity 
                   style={styles.cancelButton} 
                   onPress={closePhotoModal}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      
+      {/* Background Photo Options Modal */}
+      <Modal
+        visible={backgroundModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeBackgroundModal}
+      >
+        <TouchableWithoutFeedback onPress={closeBackgroundModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.bottomSheet}>
+                <Text style={styles.bottomSheetTitle}>Background Photo</Text>
+                
+                {/* Add background photo preview */}
+                <View style={styles.photoPreviewContainer}>
+                  <Image
+                    source={background ? 
+                      (background.deleted ? require('../assets/default-background.png') : { uri: background.uri }) : 
+                      displayBackground ? { uri: displayBackground } : 
+                      detailUser?.background ? { uri: API_CONFIG.getStorageUrl(detailUser.background) } :
+                      require('../assets/default-background.png')}
+                    style={styles.backgroundPreview}
+                  />
+                </View>
+                
+                <TouchableOpacity 
+                  style={styles.bottomSheetOption} 
+                  onPress={() => handleImagePicker(false)}
+                >
+                  <Text style={styles.bottomSheetOptionText}>Choose from Gallery</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.bottomSheetOption} 
+                  onPress={handleDeleteBackground}
+                >
+                  <Text style={styles.bottomSheetOptionText}>Delete Photo</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={closeBackgroundModal}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -232,6 +355,10 @@ const styles = {
     backgroundColor: '#fff',
   },
   photoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backgroundContainer: {
     alignItems: 'center',
     marginBottom: 20,
   },
@@ -311,6 +438,20 @@ const styles = {
     fontSize: 16,
     color: 'red',
     fontWeight: 'bold',
+  },
+  photoPreviewContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  photoPreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  backgroundPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
   },
 };
 

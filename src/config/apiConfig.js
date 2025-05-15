@@ -26,6 +26,12 @@ const API_CONFIG = {
       return `${this.BASE_URL}/${cleanPath}`;
     }
     
+    // Jika path dimulai dengan /storage/ (sesuai dengan format yang disimpan di authController)
+    if (path.startsWith('/storage/')) {
+      const storageCleanPath = path.substring(1); // Hilangkan slash awal
+      return `${this.BASE_URL}/${storageCleanPath}`;
+    }
+    
     return `${this.BASE_URL}/${cleanPath}`;
   }
 };
