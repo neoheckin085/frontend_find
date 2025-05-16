@@ -107,7 +107,15 @@ const Home = () => {
   };
 
   const Card = ({ post, index }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
     const communityImage = post.community?.gambar_url || post.community?.gambar;
+    const MAX_DESCRIPTION_LENGTH = 100; // Maximum characters to show initially
+    
+    const shouldShowMore = post.description.length > MAX_DESCRIPTION_LENGTH;
+    const displayText = isExpanded 
+      ? post.description 
+      : `${post.description.slice(0, MAX_DESCRIPTION_LENGTH)}${shouldShowMore ? '...' : ''}`;
+
     console.log('Community data:', {
       name: post.community?.name,
       imagePath: post.community?.gambar,
@@ -175,7 +183,14 @@ const Home = () => {
           <Text>
             <Text style={styles.cardTitle}>{post.title}</Text>
             <Text> - </Text>
-            <Text>{post.description}</Text>
+            <Text>{displayText}</Text>
+            {shouldShowMore && (
+              <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
+                <Text style={styles.showMoreText}>
+                  {isExpanded ? ' Sembunyikan' : ' ...Selengkapnya'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </Text>
         </View>
       </View>
@@ -278,6 +293,10 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginRight: 20
+  },
+  showMoreText: {
+    color: '#666',
+    fontWeight: '600',
   },
 });
 

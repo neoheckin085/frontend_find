@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StatusBar, Image, ImageBackground, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import Logokecil from '../assets/default-avatar.png';
+import Logokecil from '../assets/default-avatar.jpg';
 import Logobesar from '../assets/makassar.jpg';
 import { useAuth } from '../../context/AuthContext';
 import API_CONFIG from '../../src/config/apiConfig';

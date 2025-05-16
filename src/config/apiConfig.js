@@ -1,7 +1,11 @@
+import { Platform } from 'react-native';
+
 // Konfigurasi API URL
 const API_CONFIG = {
-  // Ubah IP di sini saat berpindah jaringan
-  BASE_URL: 'http://192.168.51.213:8000',
+  // Base URL for development
+  BASE_URL: Platform.OS === 'android' 
+    ? 'http://192.168.51.213:8000'  // Android Emulator
+    : 'http://localhost:8000', // iOS Simulator or web
   API_PATH: '/api',
   
   // Fungsi helper untuk mendapatkan URL lengkap

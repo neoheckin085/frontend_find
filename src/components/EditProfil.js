@@ -220,10 +220,10 @@ const EditProfil = ({ navigation }) => {
         <TouchableOpacity style={styles.photoContainer} onPress={openPhotoModal}>
           <Image
             source={photo ? 
-              (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
+              (photo.deleted ? require('../assets/default-avatar.jpg') : { uri: photo.uri }) : 
               displayPhoto ? { uri: displayPhoto } : 
               detailUser?.photo ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) } :
-              require('../assets/default-avatar.png')}
+              require('../assets/default-avatar.jpg')}
             style={styles.profilePhoto}
           />
           <Text style={styles.changePhotoText}>Change Profile Photo</Text>
@@ -240,7 +240,7 @@ const EditProfil = ({ navigation }) => {
                 />
                 : 
                 <ImageBackground
-                  source={require('../assets/default-avatar.png')} 
+                  source={require('../assets/default-avatar.jpg')} 
                   style={styles.backgroundPhoto}
                   blurRadius={5}
                 />
@@ -285,7 +285,7 @@ const EditProfil = ({ navigation }) => {
                   />
                   : 
                   <ImageBackground
-                    source={require('../assets/default-avatar.png')}
+                    source={require('../assets/default-avatar.jpg')}
                     style={styles.backgroundPhoto}
                     blurRadius={5}
                   />
@@ -385,10 +385,10 @@ const EditProfil = ({ navigation }) => {
                 <View style={styles.photoPreviewContainer}>
                   <Image
                     source={photo ? 
-                      (photo.deleted ? require('../assets/default-avatar.png') : { uri: photo.uri }) : 
+                      (photo.deleted ? require('../assets/default-avatar.jpg') : { uri: photo.uri }) : 
                       displayPhoto ? { uri: displayPhoto } : 
                       detailUser?.photo ? { uri: API_CONFIG.getStorageUrl(detailUser.photo) } :
-                      require('../assets/default-avatar.png')}
+                      require('../assets/default-avatar.jpg')}
                     style={styles.photoPreview}
                   />
                 </View>
@@ -450,7 +450,7 @@ const EditProfil = ({ navigation }) => {
                         />
                         : 
                         <ImageBackground
-                          source={require('../assets/default-avatar.png')} 
+                          source={require('../assets/default-avatar.jpg')} 
                           style={styles.backgroundPreview}
                           blurRadius={5}
                         />
@@ -495,7 +495,7 @@ const EditProfil = ({ navigation }) => {
                           />
                           : 
                           <ImageBackground
-                            source={require('../assets/default-avatar.png')}
+                            source={require('../assets/default-avatar.jpg')}
                             style={styles.backgroundPreview}
                             blurRadius={5}
                           />
