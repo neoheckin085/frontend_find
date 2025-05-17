@@ -269,12 +269,15 @@ const PostScreen = ({ navigation, route }) => {
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>New Post</Text>
 
-        <TextInput
-          placeholder="Judul postingan..."
-          value={title}
-          onChangeText={setTitle}
-          style={styles.titleInput}
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Judul Postingan</Text>
+          <TextInput
+            placeholder="Judul postingan"
+            value={title}
+            onChangeText={setTitle}
+            style={styles.titleInput}
+          />
+        </View>
 
         {/* Pemilihan Komunitas */}
         <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
@@ -323,8 +326,9 @@ const PostScreen = ({ navigation, route }) => {
 
         {/* Description Input */}
         <View style={styles.descriptionContainer}>
+          <Text style={styles.inputLabel}>Deskripsi Postingan</Text>
           <TextInput
-            placeholder="Deskripsi postingan..."
+            placeholder="Deskripsi postingan"
             value={description}
             onChangeText={setDescription}
             style={styles.caption}
@@ -497,5 +501,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontSize: 15,
+  },
+  inputContainer: {
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 6,
+    color: '#212121',
   },
 });
