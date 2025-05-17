@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../../libs/Api';
@@ -15,7 +15,7 @@ const Home = () => {
   const navigation = useNavigation();
 
   // Function to fetch posts
-  const fetchPosts = async () => {
+  const fetchPosts = async (isRefreshing = false) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
@@ -24,7 +24,9 @@ const Home = () => {
         return;
       }
 
-      const response = await Api.get('/posts/recommended', {
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const response = await Api.get(`/posts/recommended?t=${timestamp}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -46,27 +48,22 @@ const Home = () => {
       }
     } finally {
       setLoading(false);
+      if (isRefreshing) {
+        setRefreshing(false);
+      }
     }
   };
 
-  // Function to handle pull-to-refresh
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    fetchPosts().finally(() => {
-      setRefreshing(false);
-    });
-  }, []);
-
+  // Initial load
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  // Add useFocusEffect to refresh when navigating back to Home
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchPosts();
-    }, [])
-  );
+  // Function to handle pull-to-refresh
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    fetchPosts(true);
+  }, []);
 
   const handleLike = async (postId) => {
     try {
