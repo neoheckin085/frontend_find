@@ -24,7 +24,7 @@ const Home = () => {
         return;
       }
 
-      const response = await Api.get('/posts', {
+      const response = await Api.get('/posts/recommended', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -32,7 +32,18 @@ const Home = () => {
         setPosts(response.data);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Error fetching recommended posts:', error);
+      // If recommended posts fail, fall back to regular posts
+      try {
+        const response = await Api.get('/posts', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data) {
+          setPosts(response.data);
+        }
+      } catch (fallbackError) {
+        console.error('Error fetching fallback posts:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
