@@ -25,26 +25,17 @@ export const AuthProvider = ({ children }) => {
                             headers: { Authorization: `Bearer ${userToken}` },
                         });
 
-                        if (response.data && response.data.user) {
-                            setUser(response.data.user);
-                            // Store user_id for chat functionality if not already stored
-                            if (response.data.user.user_id) {
-                                await AsyncStorage.setItem('userId', response.data.user.user_id.toString());
-                            }
-                        } else if (response.data) {
+                        if (response.data && response.data.user_id) {
                             setUser(response.data);
-                            // Store user_id for chat functionality if not already stored
-                            if (response.data.user_id) {
-                                await AsyncStorage.setItem('userId', response.data.user_id.toString());
-                            }
+                            await AsyncStorage.setItem('userId', response.data.user_id.toString());
                         } else {
-                            console.warn("User data from API is not in expected format.");
+                            console.warn("User data from API is not in expected format:", response.data);
                             await AsyncStorage.removeItem('token');
                             await AsyncStorage.removeItem('userId');
                             setToken(null);
                             setUser(null);
                         }
-                        console.log('User from storage/API:', response.data.user || response.data);
+                        console.log('User from API:', response.data);
                     } catch (e) {
                         console.error("Failed to fetch user with stored token:", e);
                         await AsyncStorage.removeItem('token');

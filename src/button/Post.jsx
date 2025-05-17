@@ -23,70 +23,110 @@ const PostScreen = ({ navigation, route }) => {
   useEffect(() => {
     const fetchCommunities = async () => {
       try {
+        setLoadingCommunities(true);
         const token = await AsyncStorage.getItem('token');
         if (!token) {
           console.error('No token found');
           setLoadingCommunities(false);
           return;
         }
-        
-        // Dapatkan semua komunitas yang tersedia
-        const response = await Api.get('/communities', {
-          headers: { Authorization: `Bearer ${token}` }
+
+        // Get user data first to get user_id
+        const userResponse = await Api.get('/user', {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         });
         
-        if (response.data && Array.isArray(response.data)) {
-          // Format data untuk dropdown picker
-          const formattedCommunities = response.data.map(community => ({
-            label: community.name,
-            value: community.community_id,
-            community: community
-          }));
-          
-          setCommunities(formattedCommunities);
-          
-          // Set komunitas default jika ada
-          if (formattedCommunities.length > 0) {
-            setCommunityId(formattedCommunities[0].value);
+        // The response now directly contains user data
+        if (!userResponse.data || !userResponse.data.user_id) {
+          console.error('Invalid user data:', userResponse.data);
+          Alert.alert('Error', 'Gagal mendapatkan data user');
+          setLoadingCommunities(false);
+          return;
+        }
+
+        const userId = userResponse.data.user_id;
+        console.log('User data:', userResponse.data);
+
+        // Get all communities
+        const communitiesResponse = await Api.get('/communities', {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
           }
-        } else {
-          // Fallback ke cara lama jika endpoint baru tidak berfungsi
-          const fallbackResponse = await Api.get('/user/community-posts', {
-            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!communitiesResponse.data || !Array.isArray(communitiesResponse.data)) {
+          console.error('Invalid communities data:', communitiesResponse.data);
+          Alert.alert('Error', 'Format data komunitas tidak valid');
+          setLoadingCommunities(false);
+          return;
+        }
+
+        console.log('Communities data:', {
+          total: communitiesResponse.data.length,
+          communities: communitiesResponse.data.map(c => ({
+            id: c.community_id,
+            name: c.name,
+            owner_id: c.owner_id
+          }))
+        });
+
+        // Filter communities where user is the owner
+        const ownedCommunities = communitiesResponse.data.filter(community => {
+          const communityOwnerId = String(community.owner_id).trim();
+          const currentUserId = String(userId).trim();
+          const isOwner = communityOwnerId === currentUserId;
+          
+          console.log('Comparing IDs:', {
+            community: community.name,
+            communityOwnerId,
+            currentUserId,
+            isOwner
           });
           
-          // Ekstrak komunitas unik dari postingan
-          if (fallbackResponse.data && fallbackResponse.data.data) {
-            const uniqueCommunities = [];
-            const communityIds = new Set();
-            
-            fallbackResponse.data.data.forEach(post => {
-              if (post.community && !communityIds.has(post.community.community_id)) {
-                communityIds.add(post.community.community_id);
-                uniqueCommunities.push({
-                  label: post.community.name,
-                  value: post.community.community_id,
-                  community: post.community
-                });
-              }
-            });
-            
-            setCommunities(uniqueCommunities);
-            
-            // Set komunitas default jika ada
-            if (uniqueCommunities.length > 0) {
-              setCommunityId(uniqueCommunities[0].value);
-            }
-          }
+          return isOwner;
+        });
+
+        console.log('Owned communities:', {
+          count: ownedCommunities.length,
+          communities: ownedCommunities.map(c => c.name)
+        });
+
+        if (ownedCommunities.length === 0) {
+          console.log('No owned communities found for user:', userId);
+        }
+
+        // Format data untuk dropdown picker
+        const formattedCommunities = ownedCommunities.map(community => ({
+          label: community.name,
+          value: community.community_id,
+          community: community
+        }));
+
+        setCommunities(formattedCommunities);
+        
+        // Set komunitas default jika ada
+        if (formattedCommunities.length > 0) {
+          setCommunityId(formattedCommunities[0].value);
         }
       } catch (error) {
-        console.error('Error fetching communities:', error);
-        Alert.alert('Error', 'Gagal mengambil daftar komunitas');
+        console.error('Error in fetchCommunities:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack
+        });
+        Alert.alert('Error', 'Gagal mengambil daftar komunitas: ' + error.message);
       } finally {
         setLoadingCommunities(false);
       }
     };
-    
+
     fetchCommunities();
   }, []);
 
@@ -262,7 +302,7 @@ const PostScreen = ({ navigation, route }) => {
             </View>
           ) : (
             <Text style={styles.noCommunities}>
-              Anda belum bergabung dengan komunitas manapun
+              Anda tidak memiliki komunitas yang Anda kelola. Silakan buat komunitas baru atau minta akses sebagai owner di admin.
             </Text>
           )}
         </View>
