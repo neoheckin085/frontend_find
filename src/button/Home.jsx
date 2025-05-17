@@ -108,13 +108,52 @@ const Home = () => {
 
   const Card = ({ post, index }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
     const communityImage = post.community?.gambar_url || post.community?.gambar;
-    const MAX_DESCRIPTION_LENGTH = 100; // Maximum characters to show initially
     
-    const shouldShowMore = post.description.length > MAX_DESCRIPTION_LENGTH;
-    const displayText = isExpanded 
-      ? post.description 
-      : `${post.description.slice(0, MAX_DESCRIPTION_LENGTH)}${shouldShowMore ? '...' : ''}`;
+    // Character limit for description
+    const CHARACTER_LIMIT = 150;
+
+    // Function to handle text layout
+    const onTextLayout = ({ nativeEvent: { lines } }) => {
+      if (!shouldShowReadMore && lines.length > 2) {
+        setShouldShowReadMore(true);
+      }
+    };
+
+    // Function to render description with Read More
+    const renderDescription = () => {
+      const description = post.description || '';
+      
+      if (!shouldShowReadMore || isExpanded) {
+        return (
+          <Text style={styles.cardDescription} onTextLayout={onTextLayout}>
+            <Text style={styles.cardTitle}>{post.title}</Text> - {description}
+            {shouldShowReadMore && (
+              <Text 
+                style={styles.readMoreText} 
+                onPress={() => setIsExpanded(false)}
+              >
+                {' '}Lebih sedikit
+              </Text>
+            )}
+          </Text>
+        );
+      }
+
+      return (
+        <Text style={styles.cardDescription} onTextLayout={onTextLayout}>
+          <Text style={styles.cardTitle}>{post.title}</Text> - 
+          {description.slice(0, CHARACTER_LIMIT)}...
+          <Text 
+            style={styles.readMoreText} 
+            onPress={() => setIsExpanded(true)}
+          >
+            {' '}Selengkapnya
+          </Text>
+        </Text>
+      );
+    };
 
     console.log('Community data:', {
       name: post.community?.name,
@@ -124,78 +163,65 @@ const Home = () => {
     });
 
     return (
-    <View style={styles.card}>
-      <TouchableOpacity onPress={() => navigation.navigate('Join', { community: post.community })}>
-        <View style={styles.cardHeader}>
-          <Image 
-            style={styles.logo} 
-            source={
-              post.community?.gambar && post.community.gambar.trim() !== ''
-                ? { 
-                    uri: getImageUrl(post.community.gambar),
-                    // Add cache control
-                    cache: 'reload'
-                  }
-                : require('../assets/Find.png')
-            }
-            onLoadStart={() => {
-              console.log('Start loading community image:', post.community?.name);
-              console.log('Image source:', post.community?.gambar);
-              console.log('Full image URL:', post.community?.gambar ? getImageUrl(post.community.gambar) : 'using default');
-            }}
-            onLoadEnd={() => {
-              console.log('Finished loading community image:', post.community?.name);
-            }}
-            onError={(error) => {
-              console.log('Image loading error for community:', post.community?.name);
-              console.log('Image path:', post.community?.gambar);
-              console.log('Full URL:', post.community?.gambar ? getImageUrl(post.community.gambar) : 'using default image');
-              console.log('Error details:', error.nativeEvent);
-            }}
-          />
-          <Text style={styles.judul}>{post.community?.name || 'Community'}</Text>
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity activeOpacity={0.7} onPress={() => handleDoubleTap(index)}>
-        <Image 
-          style={styles.gambar} 
-          source={{ uri: post.image_url }}
-        />
-        {showLikeIcon[index] && (
-          <View style={styles.likeIconContainer}>
-            <Icon name="heart" size={60} color="#e74c3c" />
+      <View style={styles.card}>
+        <TouchableOpacity onPress={() => navigation.navigate('Join', { community: post.community })}>
+          <View style={styles.cardHeader}>
+            <Image 
+              style={styles.logo} 
+              source={
+                post.community?.gambar && post.community.gambar.trim() !== ''
+                  ? { 
+                      uri: getImageUrl(post.community.gambar),
+                      cache: 'reload'
+                    }
+                  : require('../assets/Find.png')
+              }
+              onLoadStart={() => {
+                console.log('Start loading community image:', post.community?.name);
+                console.log('Image source:', post.community?.gambar);
+                console.log('Full image URL:', post.community?.gambar ? getImageUrl(post.community.gambar) : 'using default');
+              }}
+              onLoadEnd={() => {
+                console.log('Finished loading community image:', post.community?.name);
+              }}
+              onError={(error) => {
+                console.log('Image loading error for community:', post.community?.name);
+                console.log('Image path:', post.community?.gambar);
+                console.log('Full URL:', post.community?.gambar ? getImageUrl(post.community.gambar) : 'using default image');
+                console.log('Error details:', error.nativeEvent);
+              }}
+            />
+            <Text style={styles.judul}>{post.community?.name || 'Community'}</Text>
           </View>
-        )}
-      </TouchableOpacity>
-      <View style={styles.cardActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => toggleLike(index)}>
-          <Icon name="heart" size={30} color={liked[index] ? '#e74c3c' : '#bdc3c7'} />
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.actionButton} 
-          onPress={() => navigation.navigate('Comment', { postId: post.post_id })}
-        >
-          <Icon name="comment-o" size={30} color="#bdc3c7" />  
+        <TouchableOpacity activeOpacity={0.7} onPress={() => handleDoubleTap(index)}>
+          <Image 
+            style={styles.gambar} 
+            source={{ uri: post.image_url }}
+          />
+          {showLikeIcon[index] && (
+            <View style={styles.likeIconContainer}>
+              <Icon name="heart" size={60} color="#e74c3c" />
+            </View>
+          )}
         </TouchableOpacity>
-      </View>
-      <View style={styles.cardBody}>
-        <View style={styles.cardDescription}>
-          <Text>
-            <Text style={styles.cardTitle}>{post.title}</Text>
-            <Text> - </Text>
-            <Text>{displayText}</Text>
-            {shouldShowMore && (
-              <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-                <Text style={styles.showMoreText}>
-                  {isExpanded ? ' Sembunyikan' : ' ...Selengkapnya'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </Text>
+        <View style={styles.cardActions}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => toggleLike(index)}>
+            <Icon name="heart" size={30} color={liked[index] ? '#e74c3c' : '#bdc3c7'} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => navigation.navigate('Comment', { postId: post.post_id })}
+          >
+            <Icon name="comment-o" size={30} color="#bdc3c7" />  
+          </TouchableOpacity>
+        </View>
+        <View style={styles.cardBody}>
+          {renderDescription()}
         </View>
       </View>
-    </View>
-  )};
+    );
+  };
 
   if (loading) {
     return (
@@ -280,11 +306,10 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     padding: 15
-  },  
+  },
   cardDescription: {
     fontSize: 16,
-    lineHeight: 22,
-    flex: 1
+    lineHeight: 22
   },
   cardActions: {
     flexDirection: 'row',
@@ -294,10 +319,10 @@ const styles = StyleSheet.create({
   actionButton: {
     marginRight: 20
   },
-  showMoreText: {
+  readMoreText: {
     color: '#666',
-    fontWeight: '600',
-  },
+    fontWeight: 'bold',
+  }
 });
 
 export default Home;
