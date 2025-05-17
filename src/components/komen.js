@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 //import Icon from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Api from '../../libs/Api';
 import { useAuth } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import API_CONFIG from '../../src/config/apiConfig';
 
 const Comment = () => {
   const navigation = useNavigation();
@@ -140,7 +141,14 @@ const Comment = () => {
   const renderComments = (comments, depth = 0) => {
     return comments.map(comment => (
       <View key={comment.comment_id} style={[styles.commentContainer, { marginLeft: depth * 20 }]}> 
-        <Icon name="person-circle-outline" size={30} color="gray" style={styles.avatar} />
+        <Image 
+          source={
+            comment.user?.photo 
+              ? { uri: API_CONFIG.getStorageUrl(comment.user.photo) }
+              : require('../assets/default-avatar.jpg')
+          }
+          style={styles.avatar}
+        />
         <View style={styles.commentContent}>
           <Text style={styles.username}>{comment.user?.name || 'Unknown User'}</Text>
           <Text style={styles.commentText}>{comment.content}</Text>
@@ -247,6 +255,9 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     marginRight: 10
   },
   commentContent: {
