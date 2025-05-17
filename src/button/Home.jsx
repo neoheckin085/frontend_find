@@ -218,6 +218,7 @@ const Home = () => {
             onPress={() => navigation.navigate('Comment', { postId: post.post_id })}
           >
             <Icon name="comment-o" size={30} color="#bdc3c7" />  
+            <Text style={styles.likeCount}>{post.comments?.length || 0}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.cardBody}>
