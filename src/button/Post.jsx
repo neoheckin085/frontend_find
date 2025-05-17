@@ -1,7 +1,7 @@
 //taruh di D:\find\frontend_find\src\button\Post.jsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, Platform, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, Platform, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../context/AuthContext';
 import Api from '../../libs/Api';
@@ -221,49 +221,53 @@ const PostScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>New Post</Text>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>New Post</Text>
 
-      <TextInput
-        placeholder="Judul postingan..."
-        value={title}
-        onChangeText={setTitle}
-        style={styles.titleInput}
-      />
+        <TextInput
+          placeholder="Judul postingan..."
+          value={title}
+          onChangeText={setTitle}
+          style={styles.titleInput}
+        />
 
-      {/* Pemilihan Komunitas */}
-      <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
-        <Text style={styles.pickerLabel}>Pilih Komunitas:</Text>
-        {loadingCommunities ? (
-          <ActivityIndicator size="small" color="#212121" />
-        ) : communities.length > 0 ? (
-          <View style={[styles.pickerWrapper, { zIndex: 1000 }]}>
-            <DropDownPicker
-              open={open}
-              value={communityId}
-              items={communities}
-              setOpen={setOpen}
-              setValue={setCommunityId}
-              setItems={setCommunities}
-              placeholder="Pilih komunitas"
-              style={styles.dropdownStyle}
-              dropDownContainerStyle={styles.dropdownContainerStyle}
-              textStyle={styles.dropdownTextStyle}
-              listMode="SCROLLVIEW"  // Use SCROLLVIEW instead of FLATLIST
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-            />
-          </View>
-        ) : (
-          <Text style={styles.noCommunities}>
-            Anda belum bergabung dengan komunitas manapun
-          </Text>
-        )}
-      </View>
+        {/* Pemilihan Komunitas */}
+        <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
+          <Text style={styles.pickerLabel}>Pilih Komunitas:</Text>
+          {loadingCommunities ? (
+            <ActivityIndicator size="small" color="#212121" />
+          ) : communities.length > 0 ? (
+            <View style={[styles.pickerWrapper, { zIndex: 1000 }]}>
+              <DropDownPicker
+                open={open}
+                value={communityId}
+                items={communities}
+                setOpen={setOpen}
+                setValue={setCommunityId}
+                setItems={setCommunities}
+                placeholder="Pilih komunitas"
+                style={styles.dropdownStyle}
+                dropDownContainerStyle={styles.dropdownContainerStyle}
+                textStyle={styles.dropdownTextStyle}
+                listMode="SCROLLVIEW"
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+              />
+            </View>
+          ) : (
+            <Text style={styles.noCommunities}>
+              Anda belum bergabung dengan komunitas manapun
+            </Text>
+          )}
+        </View>
 
-      {/* Content area */}
-      <View style={styles.contentContainer}>
+        {/* Image Preview */}
         <TouchableOpacity style={styles.previewBox} onPress={() => pickMedia(false)}>
           {media ? (
             <>
@@ -277,22 +281,32 @@ const PostScreen = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
 
-        <TextInput
-          placeholder="Deskripsi postingan..."
-          value={description}
-          onChangeText={setDescription}
-          style={styles.caption}
-          multiline
-        />
-      </View>
-      
-      {/* Button row at the bottom */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.button} onPress={() => pickMedia(true)}>
+        {/* Description Input */}
+        <View style={styles.descriptionContainer}>
+          <TextInput
+            placeholder="Deskripsi postingan..."
+            value={description}
+            onChangeText={setDescription}
+            style={styles.caption}
+            multiline={true}
+            numberOfLines={8}
+            textAlignVertical="top"
+            returnKeyType="default"
+            blurOnSubmit={false}
+          />
+        </View>
+
+        {/* Add extra padding at the bottom for buttons */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Fixed Button Container */}
+      <View style={styles.fixedButtonContainer}>
+        <TouchableOpacity style={styles.cameraButton} onPress={() => pickMedia(true)}>
           <Text style={styles.buttonText}>📷 Kamera</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.button, loading && styles.disabledButton]} 
+          style={[styles.postButton, loading && styles.disabledButton]} 
           onPress={handlePost}
           disabled={loading || communities.length === 0}
         >
@@ -303,7 +317,7 @@ const PostScreen = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -387,27 +401,52 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 16,
   },
-  caption: {
+  descriptionContainer: {
     marginTop: 12,
+    marginBottom: 12,
+  },
+  caption: {
     borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    minHeight: 200,
+    maxHeight: 400,
     textAlignVertical: 'top',
-    minHeight: 80,
   },
-  buttonRow: {
+  fixedButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    marginBottom: 20,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  button: {
+  cameraButton: {
     flex: 1,
     backgroundColor: '#212121',
     padding: 12,
     borderRadius: 8,
-    marginHorizontal: 5,
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  postButton: {
+    flex: 1,
+    backgroundColor: '#212121',
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
