@@ -10,8 +10,6 @@ import API_CONFIG from '../../src/config/apiConfig';
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
-  const [liked, setLiked] = useState([]);
-  const [showLikeIcon, setShowLikeIcon] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
@@ -31,16 +29,7 @@ const Home = () => {
       });
 
       if (response.data) {
-        // Debug log for community images
-        response.data.forEach(post => {
-          if (post.community) {
-            console.log('Community image path:', post.community.gambar);
-            console.log('Full image URL:', API_CONFIG.getStorageUrl(`storage/${post.community.gambar}`));
-          }
-        });
         setPosts(response.data);
-        setLiked(new Array(response.data.length).fill(false));
-        setShowLikeIcon(new Array(response.data.length).fill(false));
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -49,7 +38,7 @@ const Home = () => {
     }
   };
 
-  // Function untuk handle pull-to-refresh
+  // Function to handle pull-to-refresh
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     fetchPosts().finally(() => {
@@ -61,13 +50,6 @@ const Home = () => {
     fetchPosts();
   }, []);
 
-  // Function to handle manual refresh
-  const handleRefresh = React.useCallback(async () => {
-    setRefreshing(true);
-    await fetchPosts();
-    setRefreshing(false);
-  }, []);
-
   // Add useFocusEffect to refresh when navigating back to Home
   useFocusEffect(
     React.useCallback(() => {
@@ -75,23 +57,33 @@ const Home = () => {
     }, [])
   );
 
-  const toggleLike = (index) => {
-    const updatedLiked = [...liked];
-    updatedLiked[index] = !updatedLiked[index];
-    setLiked(updatedLiked);
-  };
+  const handleLike = async (postId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
 
-  const handleDoubleTap = (index) => {
-    if (!liked[index]) {
-      toggleLike(index);
+      const response = await Api.post(`/posts/${postId}/toggle-like`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Update the posts state with the new like status
+      setPosts(currentPosts => 
+        currentPosts.map(post => 
+          post.post_id === postId 
+            ? { 
+                ...post, 
+                is_liked: response.data.is_liked,
+                likes_count: response.data.likes_count 
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling like:', error);
     }
-    const updatedShowLikeIcon = [...showLikeIcon];
-    updatedShowLikeIcon[index] = true;
-    setShowLikeIcon(updatedShowLikeIcon);
-    setTimeout(() => {
-      updatedShowLikeIcon[index] = false;
-      setShowLikeIcon([...updatedShowLikeIcon]);
-    }, 1000);
   };
 
   const getImageUrl = (imagePath) => {
@@ -106,29 +98,42 @@ const Home = () => {
     return API_CONFIG.getStorageUrl(`storage/${imagePath.replace(/^storage\//, '')}`);
   };
 
-  const Card = ({ post, index }) => {
+  const Card = ({ post }) => {
+    const [lastTap, setLastTap] = useState(0);
+    const [showHeart, setShowHeart] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
-    const communityImage = post.community?.gambar_url || post.community?.gambar;
-    
-    // Character limit for description
-    const CHARACTER_LIMIT = 150;
 
-    // Function to handle text layout
-    const onTextLayout = ({ nativeEvent: { lines } }) => {
-      if (!shouldShowReadMore && lines.length > 2) {
-        setShouldShowReadMore(true);
+    const onImagePress = () => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        // Double tap detected
+        if (!post.is_liked) {
+          handleLike(post.post_id);
+          setShowHeart(true);
+          setTimeout(() => setShowHeart(false), 1000);
+        }
+        setLastTap(0);
+      } else {
+        setLastTap(now);
       }
     };
 
-    // Function to render description with Read More
     const renderDescription = () => {
       const description = post.description || '';
-      
+      const CHARACTER_LIMIT = 150;
+
+      // Function to handle text layout
+      const onTextLayout = ({ nativeEvent: { lines } }) => {
+        if (!shouldShowReadMore && lines.length > 2) {
+          setShouldShowReadMore(true);
+        }
+      };
+
       if (!shouldShowReadMore || isExpanded) {
         return (
           <Text style={styles.cardDescription} onTextLayout={onTextLayout}>
-            <Text style={styles.cardTitle}>{post.title}</Text> - {description}
+            {description}
             {shouldShowReadMore && (
               <Text 
                 style={styles.readMoreText} 
@@ -143,7 +148,6 @@ const Home = () => {
 
       return (
         <Text style={styles.cardDescription} onTextLayout={onTextLayout}>
-          <Text style={styles.cardTitle}>{post.title}</Text> - 
           {description.slice(0, CHARACTER_LIMIT)}...
           <Text 
             style={styles.readMoreText} 
@@ -154,13 +158,6 @@ const Home = () => {
         </Text>
       );
     };
-
-    console.log('Community data:', {
-      name: post.community?.name,
-      imagePath: post.community?.gambar,
-      imageUrl: post.community?.gambar_url,
-      finalUrl: communityImage ? getImageUrl(communityImage) : null
-    });
 
     return (
       <View style={styles.card}>
@@ -176,38 +173,37 @@ const Home = () => {
                     }
                   : require('../assets/Find.png')
               }
-              onLoadStart={() => {
-                console.log('Start loading community image:', post.community?.name);
-                console.log('Image source:', post.community?.gambar);
-                console.log('Full image URL:', post.community?.gambar ? getImageUrl(post.community.gambar) : 'using default');
-              }}
-              onLoadEnd={() => {
-                console.log('Finished loading community image:', post.community?.name);
-              }}
-              onError={(error) => {
-                console.log('Image loading error for community:', post.community?.name);
-                console.log('Image path:', post.community?.gambar);
-                console.log('Full URL:', post.community?.gambar ? getImageUrl(post.community.gambar) : 'using default image');
-                console.log('Error details:', error.nativeEvent);
-              }}
             />
             <Text style={styles.judul}>{post.community?.name || 'Community'}</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => handleDoubleTap(index)}>
-          <Image 
-            style={styles.gambar} 
-            source={{ uri: post.image_url }}
-          />
-          {showLikeIcon[index] && (
-            <View style={styles.likeIconContainer}>
-              <Icon name="heart" size={60} color="#e74c3c" />
+        <View style={styles.imageContainer}>
+          <TouchableOpacity 
+            activeOpacity={1}
+            onPress={onImagePress}
+          >
+            <Image 
+              style={styles.gambar} 
+              source={{ uri: post.image_url }}
+            />
+          </TouchableOpacity>
+          {showHeart && (
+            <View style={styles.heartOverlay}>
+              <Icon name="heart" size={80} color="#fff" />
             </View>
           )}
-        </TouchableOpacity>
+        </View>
         <View style={styles.cardActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => toggleLike(index)}>
-            <Icon name="heart" size={30} color={liked[index] ? '#e74c3c' : '#bdc3c7'} />
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => handleLike(post.post_id)}
+          >
+            <Icon 
+              name="heart" 
+              size={30} 
+              color={post.is_liked ? '#e74c3c' : '#bdc3c7'} 
+            />
+            <Text style={styles.likeCount}>{post.likes_count || 0}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton} 
@@ -243,8 +239,8 @@ const Home = () => {
         />
       }
     >
-      {posts.map((post, index) => (
-        <Card key={post.post_id} post={post} index={index} />
+      {posts.map((post) => (
+        <Card key={post.post_id} post={post} />
       ))}
     </ScrollView>
   );
@@ -253,21 +249,28 @@ const Home = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#f0f2f5',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
   },
-  cardTitle: {
-    fontWeight: 'bold'
+  card: {
+    margin: 3,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    padding: 10
+    padding: 10 
   },
   logo: {
     width: 40,
@@ -281,15 +284,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 2,
   },
-  card: {
-    margin: 3,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+  imageContainer: {
+    position: 'relative',
   },
   gambar: {
     width: '100%',
@@ -297,19 +293,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8
   },
-  likeIconContainer: {
-    position: 'absolute',
-    top: '40%',
-    left: '45%',
+  heartOverlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  cardBody: {
-    padding: 15
-  },
-  cardDescription: {
-    fontSize: 16,
-    lineHeight: 22
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   cardActions: {
     flexDirection: 'row',
@@ -317,12 +305,25 @@ const styles = StyleSheet.create({
     padding: 10
   },
   actionButton: {
-    marginRight: 20
+    marginRight: 20,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  likeCount: {
+    marginLeft: 5,
+    color: '#666'
+  },
+  cardBody: {
+    padding: 15
+  },
+  cardDescription: {
+    fontSize: 16,
+    lineHeight: 22 
   },
   readMoreText: {
     color: '#666',
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default Home;

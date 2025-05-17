@@ -8,8 +8,6 @@ import API_CONFIG from '../../src/config/apiConfig';
 
 const Mengikuti = () => {
   const [posts, setPosts] = useState([]);
-  const [liked, setLiked] = useState([]);
-  const [showLikeIcon, setShowLikeIcon] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
@@ -18,20 +16,14 @@ const Mengikuti = () => {
   const checkAuthStatus = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log('Current auth token:', token ? 'Token exists' : 'No token found');
-      
-      // Try to get user info to verify token is valid
-      if (token) {
-        const response = await Api.get('/user', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log('Current user:', response.data);
+      if (!token) {
+        console.error('No token found');
+        return false;
       }
+      return true;
     } catch (error) {
       console.error('Auth check failed:', error);
-      if (error.response) {
-        console.error('Auth check response:', error.response.data);
-      }
+      return false;
     }
   };
 
@@ -45,36 +37,20 @@ const Mengikuti = () => {
         return;
       }
 
-      console.log('Fetching posts with token:', token);
       const response = await Api.get('/user/community-posts', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      console.log('API Response:', response.data);
-
-      // Check if response.data has pagination structure
       if (response.data && response.data.data) {
-        // Use the data array from pagination
-        const postsData = response.data.data;
-        console.log('Posts data:', postsData);
-        setPosts(postsData);
-        setLiked(new Array(postsData.length).fill(false));
-        setShowLikeIcon(new Array(postsData.length).fill(false));
+        setPosts(response.data.data);
       } else if (Array.isArray(response.data)) {
-        // Handle case where response might be direct array
         setPosts(response.data);
-        setLiked(new Array(response.data.length).fill(false));
-        setShowLikeIcon(new Array(response.data.length).fill(false));
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        console.error('Error status:', error.response.status);
-      }
     } finally {
       setLoading(false);
-      setRefreshing(false); // End refreshing state
+      setRefreshing(false);
     }
   };
 
@@ -96,34 +72,42 @@ const Mengikuti = () => {
     }, [])
   );
 
-  const toggleLike = (index) => {
-    const updatedLiked = [...liked];
-    updatedLiked[index] = !updatedLiked[index];
-    setLiked(updatedLiked);
-  };
+  const handleLike = async (postId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
 
-  const handleDoubleTap = (index) => {
-    if (!liked[index]) {
-      toggleLike(index);
+      const response = await Api.post(`/posts/${postId}/toggle-like`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Update the posts state with the new like status
+      setPosts(currentPosts => 
+        currentPosts.map(post => 
+          post.post_id === postId 
+            ? { 
+                ...post, 
+                is_liked: response.data.is_liked,
+                likes_count: response.data.likes_count 
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling like:', error);
     }
-    const updatedShowLikeIcon = [...showLikeIcon];
-    updatedShowLikeIcon[index] = true;
-    setShowLikeIcon(updatedShowLikeIcon);
-    setTimeout(() => {
-      updatedShowLikeIcon[index] = false;
-      setShowLikeIcon([...updatedShowLikeIcon]);
-    }, 1000);
   };
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     
-    // If it's already a full URL, return it as is
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
     
-    // Add storage/ prefix if not present
     if (!imagePath.startsWith('storage/')) {
       imagePath = `storage/${imagePath}`;
     }
@@ -131,56 +115,42 @@ const Mengikuti = () => {
     return `${API_CONFIG.BASE_URL}/${imagePath}`;
   };
 
-  const Card = ({ post, index }) => {
-    console.log('Rendering card for post:', post);
-    
-    // Get community image URL
-    const communityImageUrl = post.community?.gambar ? 
-      getImageUrl(post.community.gambar) : 
-      null;
-    
-    // Get post image URL
-    const postImageUrl = post.image ? 
-      getImageUrl(post.image) : 
-      null;
-
-    // Define default images
-    const defaultAvatar = require('../assets/default-avatar.jpg');
-    const defaultPost = require('../assets/default-post.jpg');
-
-    // State for expanded text
+  const Card = ({ post }) => {
+    const [lastTap, setLastTap] = useState(0);
+    const [showHeart, setShowHeart] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
-    
-    // Character limit for description
-    const CHARACTER_LIMIT = 150;
 
-    // Function to handle text layout
-    const onTextLayout = ({ nativeEvent: { lines } }) => {
-      if (!shouldShowReadMore && lines.length > 2) {
-        setShouldShowReadMore(true);
+    const onImagePress = () => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        // Double tap detected
+        if (!post.is_liked) {
+          handleLike(post.post_id);
+          setShowHeart(true);
+          setTimeout(() => setShowHeart(false), 1000);
+        }
+        setLastTap(0);
+      } else {
+        setLastTap(now);
       }
     };
 
-    const handleCommunityPress = async () => {
-      try {
-        // Fetch community details before navigation
-        const response = await Api.get(`/communities/${post.community_id}`);
-        navigation.navigate('Join', { community: response.data });
-      } catch (error) {
-        console.error('Error fetching community details:', error);
-        Alert.alert('Error', 'Could not load community details');
-      }
-    };
-
-    // Function to render description with Read More
     const renderDescription = () => {
       const description = post.description || '';
-      
+      const CHARACTER_LIMIT = 150;
+
+      // Function to handle text layout
+      const onTextLayout = ({ nativeEvent: { lines } }) => {
+        if (!shouldShowReadMore && lines.length > 2) {
+          setShouldShowReadMore(true);
+        }
+      };
+
       if (!shouldShowReadMore || isExpanded) {
         return (
           <Text style={styles.cardDescription} onTextLayout={onTextLayout}>
-            <Text style={styles.cardTittle}>{post.title}</Text> - {description}
+            {description}
             {shouldShowReadMore && (
               <Text 
                 style={styles.readMoreText} 
@@ -195,7 +165,6 @@ const Mengikuti = () => {
 
       return (
         <Text style={styles.cardDescription} onTextLayout={onTextLayout}>
-          <Text style={styles.cardTittle}>{post.title}</Text> - 
           {description.slice(0, CHARACTER_LIMIT)}...
           <Text 
             style={styles.readMoreText} 
@@ -209,29 +178,42 @@ const Mengikuti = () => {
 
     return (
       <View style={styles.card}>
-        <TouchableOpacity onPress={handleCommunityPress}>
+        <TouchableOpacity onPress={() => navigation.navigate('Join', { community: post.community })}>
           <View style={styles.cardHeader}>
             <Image 
               style={styles.logo} 
-              source={communityImageUrl ? { uri: communityImageUrl } : defaultAvatar}
+              source={post.community?.gambar ? { uri: getImageUrl(post.community.gambar) } : require('../assets/default-avatar.jpg')}
             />
             <Text style={styles.judul}>{post.community?.name || post.community?.description || 'Community'}</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => handleDoubleTap(index)}>
-          <Image 
-            style={styles.gambar} 
-            source={postImageUrl ? { uri: postImageUrl } : defaultPost}
-          />
-          {showLikeIcon[index] && (
-            <View style={styles.likeIconContainer}>
-              <Icon name="heart" size={60} color="#e74c3c" />
+        <View style={styles.imageContainer}>
+          <TouchableOpacity 
+            activeOpacity={1}
+            onPress={onImagePress}
+          >
+            <Image 
+              style={styles.gambar} 
+              source={post.image ? { uri: getImageUrl(post.image) } : require('../assets/default-post.jpg')}
+            />
+          </TouchableOpacity>
+          {showHeart && (
+            <View style={styles.heartOverlay}>
+              <Icon name="heart" size={80} color="#fff" />
             </View>
           )}
-        </TouchableOpacity>
+        </View>
         <View style={styles.cardActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => toggleLike(index)}>
-            <Icon name="heart" size={30} color={liked[index] ? '#e74c3c' : '#bdc3c7'} />
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => handleLike(post.post_id)}
+          >
+            <Icon 
+              name="heart" 
+              size={30} 
+              color={post.is_liked ? '#e74c3c' : '#bdc3c7'} 
+            />
+            <Text style={styles.likeCount}>{post.likes_count || 0}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton} 
@@ -255,32 +237,38 @@ const Mengikuti = () => {
     );
   }
 
+  if (posts.length === 0) {
+    return (
+      <View style={styles.noPostsContainer}>
+        <Text style={styles.noPostsText}>No posts found in your communities</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView 
-      style={{ flex: 1 }}
+      style={styles.container}
       refreshControl={
-        <RefreshControl
+        <RefreshControl 
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={["#0000ff"]} // Android
-          tintColor="#0000ff" // iOS
+          colors={["#000"]}
+          tintColor="#000"
         />
       }
     >
-      {posts.length > 0 ? (
-        posts.map((post, index) => (
-          <Card key={post.post_id} post={post} index={index} />
-        ))
-      ) : (
-        <View style={styles.noPostsContainer}>
-          <Text style={styles.noPostsText}>No posts found in your communities</Text>
-        </View>
-      )}
+      {posts.map((post) => (
+        <Card key={post.post_id} post={post} />
+      ))}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f2f5',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -296,8 +284,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666'
   },
-  cardTittle: {
-    fontWeight: 'bold' 
+  card: {
+    margin: 3,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
   },
   cardHeader: {
     flexDirection: 'row',
@@ -317,15 +312,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 2,
   },
-  card: {
-    margin: 3,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+  imageContainer: {
+    position: 'relative',
   },
   gambar: {
     width: '100%',
@@ -333,19 +321,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8
   },
-  likeIconContainer: {
-    position: 'absolute',
-    top: '40%',
-    left: '45%',
+  heartOverlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
-    alignItems: 'center'
-  },
-  cardBody: {
-    padding: 15
-  },
-  cardDescription: {
-    fontSize: 16,
-    lineHeight: 22 
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   cardActions: {
     flexDirection: 'row',
@@ -353,7 +333,20 @@ const styles = StyleSheet.create({
     padding: 10
   },
   actionButton: {
-    marginRight: 20
+    marginRight: 20,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  likeCount: {
+    marginLeft: 5,
+    color: '#666'
+  },
+  cardBody: {
+    padding: 15
+  },
+  cardDescription: {
+    fontSize: 16,
+    lineHeight: 22 
   },
   readMoreText: {
     color: '#666',
