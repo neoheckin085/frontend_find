@@ -1,7 +1,14 @@
-// taruh di D:\find\frontend_find\src\router\index.jsx
-
-import { View, Text, Button, Image, TouchableOpacity, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Button,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  TouchableWithoutFeedback
+} from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
 import Splash from '../button/Splash';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -31,15 +38,29 @@ const Tab = createBottomTabNavigator();
 const MainApp = ({ navigation }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isProfileModalVisible, setProfileModalVisible] = useState(false);
-  const [isFModalVisible, setIsFModalVisible] = useState(false); 
+  const [isFModalVisible, setIsFModalVisible] = useState(false);
   const { user, token, logout } = useAuth();
+
+  const profileButtonRef = useRef(null);
+  const [profileModalPosition, setProfileModalPosition] = useState({ top: 50, left: 0 });
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
-  const openProfileModal = () => setProfileModalVisible(true);
-  const closeProfileModal = () => setProfileModalVisible(false);
   const openFindModal = () => setIsFModalVisible(true);
   const closeFindModal = () => setIsFModalVisible(false);
+
+  const openProfileModal = () => {
+    if (profileButtonRef.current) {
+      profileButtonRef.current.measureInWindow((x, y, width, height) => {
+        setProfileModalPosition({ top: y + height, left: x - 160 });
+        setProfileModalVisible(true);
+      });
+    } else {
+      setProfileModalVisible(true);
+    }
+  };
+
+  const closeProfileModal = () => setProfileModalVisible(false);
 
   const handleNavigateToMengikuti = () => {
     closeFindModal();
@@ -53,12 +74,12 @@ const MainApp = ({ navigation }) => {
 
   const handleLogout = () => {
     closeProfileModal();
-    logout(navigation); // logout akan replace ke Login
+    logout(navigation);
   };
 
   useEffect(() => {
     if (!token || !user) {
-      navigation.replace('Login'); // ← replace agar tidak error navigate
+      navigation.replace('Login');
     }
   }, [token, user, navigation]);
 
@@ -76,10 +97,17 @@ const MainApp = ({ navigation }) => {
               />
             ),
             headerTitle: () => (
-              <TouchableOpacity onPress={openFindModal} style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <TouchableOpacity
+                onPress={openFindModal}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
+              >
                 <Text style={styles.headerTitleText}>F1ND</Text>
+                <View style={styles.dropdownIndicator}>
+                  <Icon name={isFModalVisible ? 'chevron-up' : 'chevron-down'} size={15} color="black" />
+                </View>
               </TouchableOpacity>
-            ),            headerRight: () => (
+            ),
+            headerRight: () => (
               <View style={styles.headerIcons}>
                 <TouchableOpacity onPress={() => navigation.navigate('Search')}>
                   <Icon name="search" size={26} color="#333" style={styles.icon} />
@@ -91,18 +119,22 @@ const MainApp = ({ navigation }) => {
             ),
           }}
         />
-        <Tab.Screen name="Maps" component={Maps} options={{ headerTitle: 'Maps', headerShown: false }} />
-        <Tab.Screen name="Post" component={Post} options={{ headerTitle: 'Post', headerShown: false }} />
-        <Tab.Screen name="Chat" component={Chat} options={{ 
-          headerShown: false,
-          headerRight: () => (
-            <View style={styles.headerIconsChat}>
-              <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
-                <Icon name="bell" size={24} color="#808080" style={styles.iconChat} />
-              </TouchableOpacity>
-            </View>
-          ),
-        }} />
+        <Tab.Screen name="Maps" component={Maps} options={{ headerShown: false }} />
+        <Tab.Screen name="Post" component={Post} options={{ headerShown: false }} />
+        <Tab.Screen
+          name="Chat"
+          component={Chat}
+          options={{
+            headerShown: false,
+            headerRight: () => (
+              <View style={styles.headerIconsChat}>
+                <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
+                  <Icon name="bell" size={24} color="#808080" style={styles.iconChat} />
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+        />
         <Tab.Screen
           name="Profil"
           component={Profil}
@@ -113,7 +145,7 @@ const MainApp = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
                   <Icon name="bell" size={24} color="#808080" style={styles.icon} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={openProfileModal}>
+                <TouchableOpacity onPress={openProfileModal} ref={profileButtonRef}>
                   <Icon name="ellipsis-v" size={24} color="#333" />
                 </TouchableOpacity>
               </View>
@@ -127,7 +159,7 @@ const MainApp = ({ navigation }) => {
         <TouchableWithoutFeedback onPress={closeFindModal} accessible={false}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={styles.modalTopContentRight}>
+              <View style={styles.modalTopCenter}>
                 <TouchableOpacity onPress={handleNavigateToMengikuti}>
                   <Text style={styles.modalOption}>Mengikuti</Text>
                 </TouchableOpacity>
@@ -145,7 +177,7 @@ const MainApp = ({ navigation }) => {
         <TouchableWithoutFeedback onPress={closeProfileModal} accessible={false}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={styles.modalTopContentRight}>
+              <View style={[styles.modalTopContentRight, { top: profileModalPosition.top, left: profileModalPosition.left }]}>
                 <TouchableOpacity onPress={() => navigation.navigate('Premium')}>
                   <Text style={styles.modalOption}>Premium</Text>
                 </TouchableOpacity>
@@ -199,6 +231,12 @@ const styles = StyleSheet.create({
   headerTitleText: {
     fontSize: 20,
     color: '#000',
+    marginRight: 5,
+  },
+  dropdownIndicator: {
+    width: 15,
+    height: 15,
+    alignContent: 'center',
   },
   headerIconsChat: {
     flexDirection: 'row',
@@ -220,16 +258,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalTopContentRight: {
+  modalTopCenter: {
     position: 'absolute',
-    top: 50,
-    right: 10,
+    top: 60,
+    left: '50%',
+    transform: [{ translateX: -100 }],
     width: 200,
     padding: 8,
     backgroundColor: '#fff',
     borderRadius: 4,
     elevation: 5,
   },
+  modalTopContentRight: {
+  position: 'absolute',
+  top: 60, 
+  right: 10, 
+  width: 200,
+  padding: 8,
+  backgroundColor: '#fff',
+  borderRadius: 4,
+  elevation: 5,
+},
+
   modalOption: {
     fontSize: 16,
     color: '#333',
@@ -241,5 +291,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
+
 
 export default Router;
