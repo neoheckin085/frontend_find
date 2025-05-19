@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 const Splash = ({ navigation }) => {
   useEffect(() => {
     setTimeout(() => {
-      navigation.replace('mainApp'); // Setelah 3 detik, masuk ke mainApp
+      navigation.replace('MainApp'); // Fixed: Changed 'mainApp' to 'MainApp'
     }, 3000);
   }, [navigation]);
 
