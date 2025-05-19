@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 const API_CONFIG = {
   // Base URL for development
   BASE_URL: Platform.OS === 'android' 
-    ? 'http://10.214.56.193:8000'  // Android Emulator
+    ? 'http://192.168.51.213:8000'  // Android Emulator
     : 'http://localhost:8000', // iOS Simulator or web
   API_PATH: '/api',
   
