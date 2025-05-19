@@ -9,126 +9,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 const PostScreen = ({ navigation, route }) => {
-  const { user, post } = useAuth();
+  const { user } = useAuth();
   const [media, setMedia] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [communityId, setCommunityId] = useState(null);
-  const [communities, setCommunities] = useState([]);
-  const [loadingCommunities, setLoadingCommunities] = useState(true);
-  const [open, setOpen] = useState(false); // State untuk dropdown
-  
-  // Mengambil daftar komunitas saat komponen dimuat
+  const selectedCommunity = route.params?.community;
+
   useEffect(() => {
-    const fetchCommunities = async () => {
-      try {
-        setLoadingCommunities(true);
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-          console.error('No token found');
-          setLoadingCommunities(false);
-          return;
-        }
-
-        // Get user data first to get user_id
-        const userResponse = await Api.get('/user', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        // The response now directly contains user data
-        if (!userResponse.data || !userResponse.data.user_id) {
-          console.error('Invalid user data:', userResponse.data);
-          Alert.alert('Error', 'Gagal mendapatkan data user');
-          setLoadingCommunities(false);
-          return;
-        }
-
-        const userId = userResponse.data.user_id;
-        console.log('User data:', userResponse.data);
-
-        // Get all communities
-        const communitiesResponse = await Api.get('/communities', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!communitiesResponse.data || !Array.isArray(communitiesResponse.data)) {
-          console.error('Invalid communities data:', communitiesResponse.data);
-          Alert.alert('Error', 'Format data komunitas tidak valid');
-          setLoadingCommunities(false);
-          return;
-        }
-
-        console.log('Communities data:', {
-          total: communitiesResponse.data.length,
-          communities: communitiesResponse.data.map(c => ({
-            id: c.community_id,
-            name: c.name,
-            owner_id: c.owner_id
-          }))
-        });
-
-        // Filter communities where user is the owner
-        const ownedCommunities = communitiesResponse.data.filter(community => {
-          const communityOwnerId = String(community.owner_id).trim();
-          const currentUserId = String(userId).trim();
-          const isOwner = communityOwnerId === currentUserId;
-          
-          console.log('Comparing IDs:', {
-            community: community.name,
-            communityOwnerId,
-            currentUserId,
-            isOwner
-          });
-          
-          return isOwner;
-        });
-
-        console.log('Owned communities:', {
-          count: ownedCommunities.length,
-          communities: ownedCommunities.map(c => c.name)
-        });
-
-        if (ownedCommunities.length === 0) {
-          console.log('No owned communities found for user:', userId);
-        }
-
-        // Format data untuk dropdown picker
-        const formattedCommunities = ownedCommunities.map(community => ({
-          label: community.name,
-          value: community.community_id,
-          community: community
-        }));
-
-        setCommunities(formattedCommunities);
-        
-        // Set komunitas default jika ada
-        if (formattedCommunities.length > 0) {
-          setCommunityId(formattedCommunities[0].value);
-        }
-      } catch (error) {
-        console.error('Error in fetchCommunities:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          stack: error.stack
-        });
-        Alert.alert('Error', 'Gagal mengambil daftar komunitas: ' + error.message);
-      } finally {
-        setLoadingCommunities(false);
-      }
-    };
-
-    fetchCommunities();
-  }, []);
+    if (!selectedCommunity) {
+      Alert.alert('Error', 'Komunitas tidak dipilih');
+      navigation.goBack();
+    }
+  }, [selectedCommunity]);
 
   const pickMedia = (fromCamera = false) => {
     const options = {
@@ -154,7 +47,7 @@ const PostScreen = ({ navigation, route }) => {
     
     formData.append('title', title);
     formData.append('description', description);
-    formData.append('community_id', communityId);
+    formData.append('community_id', selectedCommunity.community_id);
     formData.append('user_id', user.user_id);
     
     if (photo) {
@@ -194,8 +87,8 @@ const PostScreen = ({ navigation, route }) => {
       return;
     }
     
-    if (!communityId || communityId === '') {
-      Alert.alert('Error', 'Pilih komunitas terlebih dahulu');
+    if (!selectedCommunity) {
+      Alert.alert('Error', 'Komunitas tidak dipilih');
       return;
     }
 
@@ -209,7 +102,7 @@ const PostScreen = ({ navigation, route }) => {
       console.log('Sending post with data:', {
         title,
         description,
-        communityId,
+        communityId: selectedCommunity.community_id,
         mediaUri: media.uri,
         mediaType: media.type,
         mediaName: media.fileName
@@ -232,10 +125,10 @@ const PostScreen = ({ navigation, route }) => {
       });
       
       console.log('Post response:', response.data);
-        Alert.alert(
+      Alert.alert(
         'Sukses',
         'Postingan berhasil dibuat!',
-        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+        [{ text: 'OK', onPress: () => navigation.navigate('MainApp', { screen: 'Home' }) }]
       );
       
       // Reset form
@@ -279,35 +172,10 @@ const PostScreen = ({ navigation, route }) => {
           />
         </View>
 
-        {/* Pemilihan Komunitas */}
-        <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
-          <Text style={styles.pickerLabel}>Pilih Komunitas:</Text>
-          {loadingCommunities ? (
-            <ActivityIndicator size="small" color="#212121" />
-          ) : communities.length > 0 ? (
-            <View style={[styles.pickerWrapper, { zIndex: 1000 }]}>
-              <DropDownPicker
-                open={open}
-                value={communityId}
-                items={communities}
-                setOpen={setOpen}
-                setValue={setCommunityId}
-                setItems={setCommunities}
-                placeholder="Pilih komunitas"
-                style={styles.dropdownStyle}
-                dropDownContainerStyle={styles.dropdownContainerStyle}
-                textStyle={styles.dropdownTextStyle}
-                listMode="SCROLLVIEW"
-                scrollViewProps={{
-                  nestedScrollEnabled: true,
-                }}
-              />
-            </View>
-          ) : (
-            <Text style={styles.noCommunities}>
-              Anda tidak memiliki komunitas yang Anda kelola. Silakan buat komunitas baru atau minta akses sebagai owner di admin.
-            </Text>
-          )}
+        {/* Selected Community Info */}
+        <View style={styles.communityInfo}>
+          <Text style={styles.inputLabel}>Komunitas:</Text>
+          <Text style={styles.communityName}>{selectedCommunity?.name}</Text>
         </View>
 
         {/* Image Preview */}
@@ -352,7 +220,7 @@ const PostScreen = ({ navigation, route }) => {
         <TouchableOpacity 
           style={[styles.postButton, loading && styles.disabledButton]} 
           onPress={handlePost}
-          disabled={loading || communities.length === 0}
+          disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" size="small" />
@@ -510,5 +378,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 6,
     color: '#212121',
+  },
+  communityInfo: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  communityName: {
+    fontSize: 16,
+    color: '#212121',
+    fontWeight: '500',
+    marginTop: 4,
   },
 });
