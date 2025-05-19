@@ -12,7 +12,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Splash from '../button/Splash';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Maps, Post, Chat, Profil } from '../button';
+import { Home, Maps, Post, Chat, Profil, KomunitasScreen } from '../button';
 import Komen from '../components/komen';
 import BottomNav from '../components/BottomNav';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -120,7 +120,7 @@ const MainApp = ({ navigation }) => {
           }}
         />
         <Tab.Screen name="Maps" component={Maps} options={{ headerShown: false }} />
-        <Tab.Screen name="Post" component={Post} options={{ headerShown: false }} />
+        <Tab.Screen name="KomunitasScreen" component={KomunitasScreen} options={{ headerShown: false }} />
         <Tab.Screen
           name="Chat"
           component={Chat}
@@ -223,6 +223,7 @@ const Router = () => {
       <Stack.Screen name="Notifikasi" component={NotificationScreen} options={{ headerTitle: 'Notifikasi' }} />
       <Stack.Screen name="Search" component={ExploreScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
+      <Stack.Screen name="KomunitasScreen" component={KomunitasScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };

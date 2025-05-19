@@ -21,7 +21,7 @@ const TabItem = ({isFocused, onPress, onLongPress, label}) => {
         <Icon name="map" size={30} color="gray"/>
       );
     }
-    if (label === 'Post') {
+    if (label === 'KomunitasScreen') {
       return isFocused ? (
         <Icon name="plus-square" size={40} color="black"/>
       ) : (

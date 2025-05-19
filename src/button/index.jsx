@@ -4,6 +4,7 @@ import Search from "./Search";
 import Chat from "./Chat";
 import Profil from "./Profil";
 import Post from "./Post";
+import KomunitasScreen from "./Komunitas";
 
 
-export {Home, Maps, Post, Chat, Profil}
+export {Home, Maps, Post, Chat, Profil, KomunitasScreen};
