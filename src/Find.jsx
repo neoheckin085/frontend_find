@@ -3,18 +3,19 @@ import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const Find = ({ navigation }) => {
-  const {token, user} = useAuth()
+  const { token, user } = useAuth();
   
   useEffect(() => {
     setTimeout(() => {
-      console.log(token, user);
       if (token && user) {
-      navigation.replace('mainApp'); 
+        // If user is already logged in, go directly to MainApp
+        navigation.replace('MainApp');
       } else {
+        // If user is not logged in, proceed to login
         navigation.replace('Login');
       }
     }, 3000);
-  }, [navigation]);
+  }, [navigation, token, user]);
 
   return (
     <ImageBackground source={require('./assets/Background.png')} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

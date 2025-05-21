@@ -1,12 +1,19 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
 import React, { useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const Splash = ({ navigation }) => {
+  const { token, user } = useAuth();
+
   useEffect(() => {
     setTimeout(() => {
-      navigation.replace('MainApp'); // Fixed: Changed 'mainApp' to 'MainApp'
+      if (token && user) {
+        navigation.replace('MainApp');
+      } else {
+        navigation.replace('Login');
+      }
     }, 3000);
-  }, [navigation]);
+  }, [navigation, token, user]);
 
   return (
     <View style={styles.container}>

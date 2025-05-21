@@ -201,14 +201,18 @@ const Router = () => {
   if (loading) return null;
 
   return (
-    <Stack.Navigator initialRouteName="Splash">
-      <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
+    <Stack.Navigator initialRouteName={token && user ? "Splash" : "Find"}>
       {token && user ? (
-        <Stack.Screen name="MainApp" component={MainApp} options={{ headerShown: false }} />
+        <>
+          <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
+          <Stack.Screen name="MainApp" component={MainApp} options={{ headerShown: false }} />
+        </>
       ) : (
-        <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+        <>
+          <Stack.Screen name="Find" component={Find} options={{ headerShown: false }} />
+          <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+        </>
       )}
-      <Stack.Screen name="Find" component={Find} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
       <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Postingan yang Diikuti' }} />
       <Stack.Screen name="EditProfil" component={EditProfil} options={{ headerTitle: 'Edit Profil' }} />
