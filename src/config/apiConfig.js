@@ -13,6 +13,12 @@ const API_CONFIG = {
     return `${this.BASE_URL}${this.API_PATH}`;
   },
   
+  // Helper function to get API host without protocol
+  getApiHost: function() {
+    const url = new URL(this.BASE_URL);
+    return url.hostname;
+  },
+  
   // Fungsi helper untuk mendapatkan URL storage/media
   getStorageUrl: function(path) {
     if (!path) return null;

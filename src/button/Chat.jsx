@@ -1,53 +1,96 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, Platform, Modal, TouchableHighlight } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, Platform, Modal, TouchableHighlight, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import NotificationScreen from '../components/Notifikasi';
-import EmojiSelector from 'react-native-emoji-selector'; // Import emoji selector
-
-const messages = [
-  { id: '1', name: 'psmfans1915', sender: 'Eqi', message: 'adakah nobar', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s', isUnread: true, allMessages: ['Eqi: Halo', 'Eqi: Apa kabar?'] },
-  { id: '2', name: 'ikasikotamakassar', sender: 'La Besse', message: 'Bagaimanaji pertandingannu?', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJJHyC-tE-Z5VyPjHNDoFrrgyebKVyhpLC3w&s', isUnread: false, allMessages: ['La Besse: Selamat pagi', 'La Besse: Ada kabar apa?'] },
-  { id: '3', name: 'makassar.pubg', sender: 'Jeki', message: 'infokan permabaran', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXy4SLmx0FwY_wnUTrTpLzuebOTroiHJ0bpw&s', isUnread: true, allMessages: ['Jeki: Main bareng yuk', 'Jeki: Jam berapa?'] },
-  { id: '4', name: 'christyzer.ofc', sender: 'Rifat', message: 'adakah event', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIrTUnK8DR0Rn8kBNoPcaSgAwM1UzzHGQpaw&s', isUnread: false, allMessages: ['Rifat: Lagi sibuk apa?', 'Rifat: Nanti ngobrol yuk!'] },
-];
+import EmojiSelector from 'react-native-emoji-selector';
+import { useChat } from '../../context/ChatContext';
+import { useAuth } from '../../context/AuthContext';
+import API_CONFIG from '../config/apiConfig';
 
 const ChatList = ({ navigation }) => {
+  const { chatGroups, loading, error, fetchChatGroups } = useChat();
+
+  useEffect(() => {
+    fetchChatGroups();
+  }, []);
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Messages', item)}>
+    <TouchableOpacity onPress={() => navigation.navigate('Messages', { chatGroup: item })}>
       <View style={styles.chatItem}>
-        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        <Image source={{ uri: item.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s' }} style={styles.avatar} />
         <View style={styles.chatInfo}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.message} numberOfLines={1}>{item.sender}: {item.message}</Text>
+          <Text style={styles.name}>{item.display_name || item.name}</Text>
+          <Text style={styles.message} numberOfLines={1}>
+            {item.messages && item.messages.length > 0 ? 
+              `${item.messages[0].user?.name || 'User'}: ${item.messages[0].message}` : 
+              'No messages yet'}
+          </Text>
         </View>
-        {item.isUnread && <View style={styles.unreadIndicator} />}
+        {item.unread_count > 0 && <View style={styles.unreadIndicator} />}
       </View>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button title="Try Again" onPress={fetchChatGroups} />
+      </View>
+    );
+  }
+
+  if (chatGroups.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No chat groups found</Text>
+        <Button title="Refresh" onPress={fetchChatGroups} />
+      </View>
+    );
+  }
+
   return (
-    <FlatList data={messages} keyExtractor={(item) => item.id} renderItem={renderItem} />
+    <FlatList 
+      data={chatGroups} 
+      keyExtractor={(item) => item.chat_group_id.toString()} 
+      renderItem={renderItem}
+      refreshing={loading}
+      onRefresh={fetchChatGroups}
+    />
   );
 };
 
 const Messages = ({ route, navigation }) => {
-  const { name, sender, message, allMessages } = route.params || {};
+  const { chatGroup } = route.params || {};
+  const { user } = useAuth();
+  const { messages, loading, error, loadMessages, sendMessage } = useChat();
   const [inputMessage, setInputMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState([...allMessages || [], `${sender}: ${message}`]);
-
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
 
-  React.useLayoutEffect(() => {
-    if (name) {
-      navigation.setOptions({ title: name });
+  useEffect(() => {
+    if (chatGroup?.chat_group_id) {
+      loadMessages(chatGroup.chat_group_id);
+      
+      // Set navigation title
+      if (chatGroup) {
+        navigation.setOptions({ title: chatGroup.display_name || chatGroup.name });
+      }
     }
-  }, [navigation, name]);
+  }, [chatGroup?.chat_group_id]);
 
   const handleSendMessage = () => {
     if (inputMessage.trim()) {
-      setChatMessages([...chatMessages, `Anda: ${inputMessage}`]);
+      sendMessage(inputMessage);
       setInputMessage('');
     }
   };
@@ -57,19 +100,48 @@ const Messages = ({ route, navigation }) => {
     setEmojiModalVisible(false); // Close emoji modal
   };
 
+  if (loading && messages.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button title="Try Again" onPress={() => loadMessages(chatGroup.chat_group_id)} />
+      </View>
+    );
+  }
+
+  const getAvatar = (msg) => {
+    if (!msg.user) return null;
+    return msg.user.profile_photo_url ? 
+      API_CONFIG.getStorageUrl(msg.user.profile_photo_url) : 
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s';
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <FlatList
-        data={chatMessages}
-        keyExtractor={(item, index) => index.toString()}
+        data={messages}
+        keyExtractor={(item, index) => item.id?.toString() || index.toString()}
         renderItem={({ item }) => {
-          const [msgSender, ...textParts] = item.split(":");
-          const text = textParts.join(":").trim();
-          const isUser = msgSender.trim() === "Anda";
+          const isUser = item.user && item.user.user_id === user.user_id;
           return (
-            <View style={[styles.chatBubble, isUser ? styles.chatBubbleUser : styles.chatBubbleOther]}>
-              <Text style={[styles.senderName, isUser ? styles.senderUser : styles.senderOther]}>{msgSender.trim()}</Text>
-              <Text style={[styles.chatText, { color: '#000' }]}>{text}</Text>
+            <View style={[styles.messageBubbleContainer, isUser ? styles.userMessageContainer : styles.otherMessageContainer]}>
+              {!isUser && (
+                <Image source={{ uri: getAvatar(item) }} style={styles.messageAvatar} />
+              )}
+              <View style={[styles.chatBubble, isUser ? styles.chatBubbleUser : styles.chatBubbleOther]}>
+                <Text style={[styles.senderName, isUser ? styles.senderUser : styles.senderOther]}>
+                  {item.user ? item.user.name : 'Unknown User'}
+                </Text>
+                <Text style={[styles.chatText, { color: '#000' }]}>{item.message}</Text>
+              </View>
             </View>
           );
         }}
@@ -109,7 +181,7 @@ const Messages = ({ route, navigation }) => {
 };
 
 const Stack = createStackNavigator();
-const App = ( {navigation} ) => {
+const App = ({ navigation }) => {
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -230,6 +302,51 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '90%',
     height: '70%',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  messageBubbleContainer: {
+    flexDirection: 'row',
+    marginVertical: 5,
+    marginHorizontal: 10,
+  },
+  userMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  otherMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  messageAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 5,
+    alignSelf: 'flex-end',
   },
 });
 
