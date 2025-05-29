@@ -7,13 +7,50 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   StyleSheet,
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import Api from '../../api/Api';
 
 const VerifEmail = () => {
   const navigation = useNavigation();
-  const [code, setCode] = useState(''); 
+  const route = useRoute();
+  const { email } = route.params;
+  const [token, setToken] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  const handleVerifyToken = async () => {
+    if (!token) {
+      Alert.alert('Error', 'Please enter the verification code');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await Api.post('/verify-token', { token });
+      navigation.navigate('NewPassword', { token, email: response.data.email });
+    } catch (error) {
+      const message = error.response?.data?.message || 'Invalid verification code';
+      Alert.alert('Error', message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setIsResending(true);
+    try {
+      const response = await Api.post('/forgot-password', { email });
+      Alert.alert('Success', response.data.message);
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to resend code';
+      Alert.alert('Error', message);
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
@@ -27,25 +64,36 @@ const VerifEmail = () => {
 
         <View style={styles.formContainer}>
           <Text style={styles.instructionText}>
-            We have sent you a code, please enter the code to confirm your account.
+            We have sent you a code to your email address. Please enter the code to verify.
           </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Add the code"
+            placeholder="Enter verification code"
             placeholderTextColor="#aaa"
-            value={code} 
-            onChangeText={setCode} 
-            keyboardType="number-pad" 
-            maxLength={6} 
+            value={token}
+            onChangeText={setToken}
+            keyboardType="default"
+            autoCapitalize="none"
           />
 
-          <TouchableOpacity style={styles.enterButton}  onPress={() => navigation.navigate('NewPassword')}>
-            <Text style={styles.enterButtonText}>Enter</Text>
+          <TouchableOpacity 
+            style={[styles.enterButton, isLoading && styles.buttonDisabled]}
+            onPress={handleVerifyToken}
+            disabled={isLoading}
+          >
+            <Text style={styles.enterButtonText}>
+              {isLoading ? 'Verifying...' : 'Verify Code'}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity >
-            <Text style={styles.phoneOptionText}>Sent Again</Text>
+          <TouchableOpacity 
+            onPress={handleResendCode}
+            disabled={isResending}
+          >
+            <Text style={[styles.resendText, isResending && styles.textDisabled]}>
+              {isResending ? 'Sending...' : 'Resend Code'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -59,7 +107,7 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
-    justifyContent: 'flex-start', 
+    justifyContent: 'flex-start',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -70,7 +118,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   backButton: {
-    marginRight: 10, 
+    marginRight: 10,
   },
   backgroundTitle: {
     fontSize: 28,
@@ -78,7 +126,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   formContainer: {
-    position: 'absolute', 
+    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
@@ -94,6 +142,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 20,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   input: {
     width: '100%',
@@ -110,11 +159,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  phoneOptionText: {
-    color: '#777',
-    textAlign: 'center',
-    marginTop: 15,
-  },
   enterButton: {
     width: '100%',
     backgroundColor: '#000',
@@ -129,6 +173,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  resendText: {
+    color: '#000',
+    marginTop: 15,
+    fontSize: 16,
+  },
+  buttonDisabled: {
+    backgroundColor: '#666',
+  },
+  textDisabled: {
+    color: '#666',
   },
 });
 

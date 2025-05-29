@@ -7,13 +7,63 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import Api from '../../api/Api';
 
 const Email = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('Sending forgot password request');
+      const response = await Api.post('/forgot-password', { email });
+      console.log('Forgot password response:', response.data);
+      
+      Alert.alert('Success', response.data.message);
+      navigation.navigate('VerifEmail', { email });
+    } catch (error) {
+      console.error('Error:', error);
+      
+      let errorMessage = 'Failed to send reset email. ';
+      
+      if (error.response?.status === 422) {
+        // Validation error
+        const validationErrors = error.response.data.errors;
+        if (validationErrors?.email) {
+          errorMessage = validationErrors.email[0];
+        } else {
+          errorMessage = 'Invalid email address';
+        }
+      } else if (error.message.includes('Network Error')) {
+        errorMessage = 'Network error - Please check your internet connection and make sure the server is running.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check if the server is running.';
+      } else {
+        errorMessage += error.message;
+      }
+
+      Alert.alert(
+        'Error',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
@@ -40,14 +90,21 @@ const Email = () => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
           />
 
           <TouchableOpacity onPress={() => navigation.navigate('Telepon')}>
             <Text style={styles.phoneOptionText}>Use phone number? Click here</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.enterButton}  onPress={() => navigation.navigate('VerifEmail')}>
-            <Text style={styles.enterButtonText}>Enter</Text>
+          <TouchableOpacity 
+            style={[styles.enterButton, isLoading && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={isLoading}
+          >
+            <Text style={styles.enterButtonText}>
+              {isLoading ? 'Sending...' : 'Enter'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -131,6 +188,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    backgroundColor: '#666',
   },
 });
 

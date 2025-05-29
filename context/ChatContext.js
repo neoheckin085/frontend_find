@@ -40,7 +40,7 @@ export const ChatProvider = ({ children }) => {
       // Initialize Pusher instance first
       const pusherClient = new Pusher(PUSHER_CONFIG.APP_KEY, {
         cluster: PUSHER_CONFIG.APP_CLUSTER,
-        authEndpoint: `${API_CONFIG.getApiUrl()}${PUSHER_CONFIG.AUTH_ENDPOINT}`,
+        authEndpoint: `${API_CONFIG.BASE_URL}${PUSHER_CONFIG.AUTH_ENDPOINT}`,
         auth: {
           headers: {
             Authorization: `Bearer ${token}`,

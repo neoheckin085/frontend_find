@@ -1,56 +1,72 @@
 import { Platform } from 'react-native';
 
-// Konfigurasi API URL
+const DEV = true; // Set this to false for production
+
+// Konfigurasi IP address sesuai environment
+const IP_ADDRESS = '192.168.135.61'; // Ganti dengan IP address komputer Anda
+
+const config = {
+    development: {
+        android: {
+            emulator: 'http://10.0.2.2:8000',
+            device: `http://${IP_ADDRESS}:8000`
+        },
+        ios: {
+            simulator: 'http://localhost:8000',
+            device: `http://${IP_ADDRESS}:8000`
+        }
+    },
+    production: {
+        api: 'https://your-production-api.com'
+    }
+};
+
+// Choose the appropriate base URL based on platform and environment
+const getBaseUrl = () => {
+    if (DEV) {
+        if (Platform.OS === 'android') {
+            // Untuk physical device Android, gunakan IP address
+            return config.development.android.device;
+            // Untuk emulator Android, gunakan ini:
+            // return config.development.android.emulator;
+        } else if (Platform.OS === 'ios') {
+            // Untuk physical device iOS, gunakan IP address
+            return config.development.ios.device;
+            // Untuk simulator iOS, gunakan ini:
+            // return config.development.ios.simulator;
+        }
+    }
+    return config.production.api;
+};
+
+// Debug info
+console.log('Platform:', Platform.OS);
+console.log('Base URL:', getBaseUrl());
+console.log('API URL:', `${getBaseUrl()}/api`);
+
 const API_CONFIG = {
-  // Base URL for development
-  BASE_URL: Platform.OS === 'android' 
-    ? 'http://192.168.17.61:8000'  // Android Emulator
-    : 'http://localhost:8000', // iOS Simulator or web
-  API_PATH: '/api',
-  
-  // Fungsi helper untuk mendapatkan URL lengkap
-  getApiUrl: function() {
-    return `${this.BASE_URL}${this.API_PATH}`;
-  },
-  
-  // Helper function to get API host without protocol
-  getApiHost: function() {
-    const url = new URL(this.BASE_URL);
-    return url.hostname;
-  },
-  
-  // Fungsi helper untuk mendapatkan URL storage/media
-  getStorageUrl: function(path) {
-    if (!path) return null;
+    // Base URL tanpa /api
+    BASE_URL: getBaseUrl(),
+    // Full API URL dengan /api
+    API_URL: `${getBaseUrl()}/api`,
     
-    // Jika path sudah berisi URL lengkap, kembalikan apa adanya
-    if (path.startsWith('http')) {
-      console.log('getStorageUrl - already complete URL:', path);
-      return path;
+    // Helper function untuk mendapatkan URL storage/media
+    getStorageUrl: function(path) {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        return `${this.BASE_URL}/${cleanPath}`;
     }
-    
-    // Hapus slash di awal path jika ada
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    
-    // Jika path dimulai dengan 'storage/', maka ini adalah path yang disimpan oleh Laravel
-    if (cleanPath.startsWith('storage/')) {
-      const fullUrl = `${this.BASE_URL}/${cleanPath}`;
-      console.log('getStorageUrl - storage/ path:', { original: path, result: fullUrl });
-      return fullUrl;
-    }
-    
-    // Jika path dimulai dengan /storage/ (sesuai dengan format yang disimpan di authController)
-    if (path.startsWith('/storage/')) {
-      const storageCleanPath = path.substring(1); // Hilangkan slash awal
-      const fullUrl = `${this.BASE_URL}/${storageCleanPath}`;
-      console.log('getStorageUrl - /storage/ path:', { original: path, result: fullUrl });
-      return fullUrl;
-    }
-    
-    const fullUrl = `${this.BASE_URL}/${cleanPath}`;
-    console.log('getStorageUrl - other path:', { original: path, result: fullUrl });
-    return fullUrl;
-  }
+};
+
+// Export konfigurasi untuk axios
+export const apiConfig = {
+    baseURL: API_CONFIG.API_URL,
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+    },
+    timeout: 10000
 };
 
 export default API_CONFIG;
