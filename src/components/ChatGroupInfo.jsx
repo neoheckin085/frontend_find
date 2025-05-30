@@ -16,7 +16,11 @@ const ChatGroupInfo = ({ visible, onClose, chatGroup, onLeaveGroup }) => {
   const renderMember = ({ item }) => (
     <View style={styles.memberItem}>
       <Image 
-        source={item.profile_image ? { uri: getImageUrl(item.profile_image) } : require('../assets/Find.png')}
+        source={
+          item.photo 
+            ? { uri: API_CONFIG.getStorageUrl(item.photo) }
+            : require('../assets/default-avatar.jpg')
+        }
         style={styles.memberAvatar}
       />
       <Text style={styles.memberName}>{item.name}</Text>
