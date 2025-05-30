@@ -188,7 +188,7 @@ const Messages = ({ route, navigation }) => {
               style={[styles.sendButton, !inputMessage.trim() && styles.sendButtonDisabled]}
               disabled={!inputMessage.trim()}
             >
-              <FontAwesome name="send" size={20} color={inputMessage.trim() ? '#007bff' : '#ccc'} />
+              <FontAwesome name="send" size={20} color="#ffffff" />
             </TouchableOpacity>
           </View>
         </View>
