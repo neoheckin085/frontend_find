@@ -16,22 +16,54 @@ const ChatList = ({ navigation }) => {
     fetchChatGroups();
   }, []);
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Messages', { chatGroup: item })}>
-      <View style={styles.chatItem}>
-        <Image source={{ uri: item.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s' }} style={styles.avatar} />
-        <View style={styles.chatInfo}>
-          <Text style={styles.name}>{item.display_name || item.name}</Text>
-          <Text style={styles.message} numberOfLines={1}>
-            {item.messages && item.messages.length > 0 ? 
-              `${item.messages[0].user?.name || 'User'}: ${item.messages[0].message}` : 
-              'No messages yet'}
-          </Text>
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    // If it's already a full URL, return it
+    if (imagePath.startsWith('http')) return imagePath;
+    // Add storage/ prefix if not present
+    const storagePath = imagePath.startsWith('storage/') ? imagePath : `storage/${imagePath}`;
+    return API_CONFIG.getStorageUrl(storagePath);
+  };
+
+  const renderItem = ({ item }) => {
+    // Log chat group data for debugging
+    console.log('Rendering chat group:', {
+      name: item.name,
+      community: item.community,
+      communityImage: item.community?.gambar
+    });
+
+    return (
+      <TouchableOpacity onPress={() => navigation.navigate('Messages', { chatGroup: item })}>
+        <View style={styles.chatItem}>
+          <Image 
+            source={
+              item.community?.gambar
+                ? { uri: getImageUrl(item.community.gambar) }
+                : require('../assets/Find.png')
+            } 
+            style={styles.avatar}
+            onError={(error) => {
+              console.log('Image loading error for chat:', item.name);
+              console.log('Community:', item.community);
+              console.log('Image path:', item.community?.gambar);
+              console.log('Full URL:', item.community?.gambar ? getImageUrl(item.community.gambar) : 'using default image');
+              console.log('Error details:', error.nativeEvent);
+            }}
+          />
+          <View style={styles.chatInfo}>
+            <Text style={styles.name}>{item.display_name || item.name}</Text>
+            <Text style={styles.message} numberOfLines={1}>
+              {item.messages && item.messages.length > 0 ? 
+                `${item.messages[0].user?.name || 'User'}: ${item.messages[0].message}` : 
+                'No messages yet'}
+            </Text>
+          </View>
+          {item.unread_count > 0 && <View style={styles.unreadIndicator} />}
         </View>
-        {item.unread_count > 0 && <View style={styles.unreadIndicator} />}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
