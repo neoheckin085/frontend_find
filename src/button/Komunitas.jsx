@@ -76,6 +76,16 @@ const KomunitasScreen = ({ navigation }) => {
         return;
       }
 
+      // Log communities data for debugging
+      console.log('All communities data:', communitiesResponse.data);
+      communitiesResponse.data.forEach(community => {
+        console.log('Community image details:', {
+          name: community.name,
+          gambar: community.gambar,
+          gambar_url: getImageUrl(community.gambar)
+        });
+      });
+
       // Filter communities where user is the owner
       const ownedCommunities = communitiesResponse.data.filter(community => {
         const communityOwnerId = String(community.owner_id).trim();
@@ -83,6 +93,7 @@ const KomunitasScreen = ({ navigation }) => {
         return communityOwnerId === currentUserId;
       });
 
+      console.log('Owned communities:', ownedCommunities);
       setCommunities(ownedCommunities);
     } catch (error) {
       console.error('Error in fetchCommunities:', error);
