@@ -8,6 +8,7 @@ import EmojiSelector from 'react-native-emoji-selector';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import API_CONFIG from '../config/apiConfig';
+import ChatGroupInfo from '../components/ChatGroupInfo';
 
 const ChatList = ({ navigation }) => {
   const { chatGroups, loading, error, fetchChatGroups } = useChat();
@@ -105,18 +106,47 @@ const ChatList = ({ navigation }) => {
 const Messages = ({ route, navigation }) => {
   const { chatGroup } = route.params || {};
   const { user } = useAuth();
-  const { messages, loading, error, loadMessages, sendMessage } = useChat();
+  const { messages, loading, error, loadMessages, sendMessage, leaveGroup } = useChat();
   const [inputMessage, setInputMessage] = useState('');
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
+  const [groupInfoVisible, setGroupInfoVisible] = useState(false);
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    const storagePath = imagePath.startsWith('storage/') ? imagePath : `storage/${imagePath}`;
+    return API_CONFIG.getStorageUrl(storagePath);
+  };
 
   useEffect(() => {
     if (chatGroup?.chat_group_id) {
       loadMessages(chatGroup.chat_group_id);
       
-      // Set navigation title
-      if (chatGroup) {
-        navigation.setOptions({ title: chatGroup.display_name || chatGroup.name });
-      }
+      // Set custom header with community image and name
+      navigation.setOptions({
+        headerTitle: () => (
+          <TouchableOpacity 
+            onPress={() => setGroupInfoVisible(true)}
+            style={styles.headerContainer}
+          >
+            <Image 
+              source={
+                chatGroup.community?.gambar
+                  ? { uri: getImageUrl(chatGroup.community.gambar) }
+                  : require('../assets/Find.png')
+              }
+              style={styles.headerAvatar}
+            />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>{chatGroup.display_name || chatGroup.name}</Text>
+              <Text style={styles.headerSubtitle}>
+                {chatGroup?.users?.length || 0} members
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ),
+        headerTitleAlign: 'left',
+      });
     }
   }, [chatGroup?.chat_group_id]);
 
@@ -130,6 +160,14 @@ const Messages = ({ route, navigation }) => {
   const handleEmojiSelect = (emoji) => {
     setInputMessage(inputMessage + emoji);
     setEmojiModalVisible(false); // Close emoji modal
+  };
+
+  const handleLeaveGroup = async (groupId) => {
+    const success = await leaveGroup(groupId);
+    if (success) {
+      setGroupInfoVisible(false);
+      navigation.goBack();
+    }
   };
 
   if (loading && messages.length === 0) {
@@ -157,10 +195,23 @@ const Messages = ({ route, navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      {/* Chat Group Info Modal */}
+      <ChatGroupInfo
+        visible={groupInfoVisible}
+        onClose={() => setGroupInfoVisible(false)}
+        chatGroup={chatGroup}
+        onLeaveGroup={handleLeaveGroup}
+      />
+
+      {/* Messages List */}
       <FlatList
         data={messages}
-        keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+        keyExtractor={(item) => item.message_id}
         renderItem={({ item }) => {
           const isUser = item.user && item.user.user_id === user.user_id;
           return (
@@ -177,36 +228,54 @@ const Messages = ({ route, navigation }) => {
             </View>
           );
         }}
+        inverted
+        contentContainerStyle={styles.messagesList}
       />
+
+      {/* Message Input */}
       <View style={styles.inputContainer}>
         <TouchableOpacity onPress={() => setEmojiModalVisible(true)} style={styles.emojiButton}>
-          <Text style={styles.emojiText}>😊</Text>
+          <Text style={styles.emojiButtonText}>😊</Text>
         </TouchableOpacity>
+        
         <TextInput
           style={styles.input}
           value={inputMessage}
           onChangeText={setInputMessage}
-          placeholder="Ketik pesan..."
+          placeholder="Type a message..."
+          multiline
         />
-        <Button title="Kirim" onPress={handleSendMessage} />
+        
+        <TouchableOpacity 
+          onPress={handleSendMessage}
+          style={[styles.sendButton, !inputMessage.trim() && styles.sendButtonDisabled]}
+          disabled={!inputMessage.trim()}
+        >
+          <FontAwesome name="send" size={20} color={inputMessage.trim() ? '#007bff' : '#ccc'} />
+        </TouchableOpacity>
       </View>
 
-      {/* Emoji Modal */}
+      {/* Emoji Selector Modal */}
       <Modal
         visible={emojiModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setEmojiModalVisible(false)}
       >
-        <TouchableOpacity style={styles.modalBackground} onPress={() => setEmojiModalVisible(false)}>
-          <View style={styles.emojiModal}>
-            {/* Using EmojiSelector */}
-            <EmojiSelector
-              onEmojiSelected={handleEmojiSelect}
-              showSearchBar={true} // Optional: adds search bar to find emojis
-            />
+        <View style={styles.emojiContainer}>
+          <View style={styles.emojiHeader}>
+            <TouchableOpacity onPress={() => setEmojiModalVisible(false)}>
+              <Text style={styles.closeButton}>Close</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+          <EmojiSelector
+            onEmojiSelected={emoji => {
+              setInputMessage(prev => prev + emoji);
+              setEmojiModalVisible(false);
+            }}
+            showSearchBar={false}
+            columns={8}
+          />
+        </View>
       </Modal>
     </KeyboardAvoidingView>
   );
@@ -319,21 +388,25 @@ const styles = StyleSheet.create({
   emojiButton: {
     marginRight: 10,
   },
-  emojiText: {
+  emojiButtonText: {
     fontSize: 24,
   },
-  modalBackground: {
+  emojiContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'white',
+    marginTop: 'auto',
   },
-  emojiModal: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '90%',
-    height: '70%',
+  emojiHeader: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  closeButton: {
+    color: '#007bff',
+    fontSize: 16,
+    fontWeight: '500',
   },
   loadingContainer: {
     flex: 1,
@@ -379,6 +452,39 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginRight: 5,
     alignSelf: 'flex-end',
+  },
+  messagesList: {
+    padding: 10,
+  },
+  sendButton: {
+    padding: 10,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 0,
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  headerTextContainer: {
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#666',
   },
 });
 

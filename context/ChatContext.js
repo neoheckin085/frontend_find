@@ -224,6 +224,28 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  // Add leaveGroup function
+  const leaveGroup = async (groupId) => {
+    try {
+      await Api.delete(`/chat/groups/${groupId}/users`);
+      
+      // Remove the group from the local state
+      setChatGroups(prev => prev.filter(group => group.chat_group_id !== groupId));
+      
+      // If this was the active chat, clear it
+      if (activeChat === groupId) {
+        setActiveChat(null);
+        setMessages([]);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to leave chat group:', error);
+      setError('Failed to leave chat group');
+      return false;
+    }
+  };
+
   return (
     <ChatContext.Provider value={{
       chatGroups,
@@ -235,6 +257,7 @@ export const ChatProvider = ({ children }) => {
       loadMessages,
       sendMessage,
       createChatGroup,
+      leaveGroup,
       setActiveChat
     }}>
       {children}
