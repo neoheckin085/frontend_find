@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, Platform, Modal, TouchableHighlight, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -16,6 +16,8 @@ const ChatList = ({ navigation }) => {
   useEffect(() => {
     fetchChatGroups();
   }, []);
+
+  const rootNavigation = navigation.getParent ? navigation.getParent() : navigation;
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -35,7 +37,7 @@ const ChatList = ({ navigation }) => {
     });
 
     return (
-      <TouchableOpacity onPress={() => navigation.navigate('Messages', { chatGroup: item })}>
+      <TouchableOpacity onPress={() => rootNavigation.navigate('Messages', { chatGroup: item })}>
         <View style={styles.chatItem}>
           <Image 
             source={
@@ -110,6 +112,7 @@ const Messages = ({ route, navigation }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
   const [groupInfoVisible, setGroupInfoVisible] = useState(false);
+  const flatListRef = useRef(null);
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -150,6 +153,13 @@ const Messages = ({ route, navigation }) => {
     }
   }, [chatGroup?.chat_group_id]);
 
+  // Auto scroll to bottom when messages change
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
   const handleSendMessage = () => {
     if (inputMessage.trim()) {
       sendMessage(inputMessage);
@@ -188,10 +198,48 @@ const Messages = ({ route, navigation }) => {
   }
 
   const getAvatar = (msg) => {
-    if (!msg.user) return null;
-    return msg.user.profile_photo_url ? 
-      API_CONFIG.getStorageUrl(msg.user.profile_photo_url) : 
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRSXBzOgUojdYeF3P-fP4TLuUNPSSbLsJk_Q&s';
+    if (!msg.user) return require('../assets/default-avatar.jpg');
+    if (msg.user.photo) {
+      return { uri: API_CONFIG.getStorageUrl(msg.user.photo) };
+    }
+    return require('../assets/default-avatar.jpg');
+  };
+
+  const renderMessage = ({ item, index }) => {
+    const isUser = item.user && item.user.user_id === user.user_id;
+    const showAvatar = !isUser && (
+      index === messages.length - 1 || 
+      messages[index + 1].user?.user_id !== item.user?.user_id
+    );
+
+    return (
+      <View style={[
+        styles.messageBubbleContainer,
+        isUser ? styles.userMessageContainer : styles.otherMessageContainer
+      ]}>
+        {!isUser && (
+          <View style={{ width: 35, marginRight: 8 }}>
+            {showAvatar ? (
+              <Image 
+                source={getAvatar(item)} 
+                style={styles.messageAvatar}
+              />
+            ) : null}
+          </View>
+        )}
+        <View style={[
+          styles.chatBubble,
+          isUser ? styles.chatBubbleUser : styles.chatBubbleOther
+        ]}>
+          {!isUser && (
+            <Text style={[styles.senderName, styles.senderOther]}>
+              {item.user ? item.user.name : 'Unknown User'}
+            </Text>
+          )}
+          <Text style={styles.chatText}>{item.message}</Text>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -210,25 +258,10 @@ const Messages = ({ route, navigation }) => {
 
       {/* Messages List */}
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.message_id}
-        renderItem={({ item }) => {
-          const isUser = item.user && item.user.user_id === user.user_id;
-          return (
-            <View style={[styles.messageBubbleContainer, isUser ? styles.userMessageContainer : styles.otherMessageContainer]}>
-              {!isUser && (
-                <Image source={{ uri: getAvatar(item) }} style={styles.messageAvatar} />
-              )}
-              <View style={[styles.chatBubble, isUser ? styles.chatBubbleUser : styles.chatBubbleOther]}>
-                <Text style={[styles.senderName, isUser ? styles.senderUser : styles.senderOther]}>
-                  {item.user ? item.user.name : 'Unknown User'}
-                </Text>
-                <Text style={[styles.chatText, { color: '#000' }]}>{item.message}</Text>
-              </View>
-            </View>
-          );
-        }}
-        inverted
+        renderItem={renderMessage}
         contentContainerStyle={styles.messagesList}
       />
 
@@ -340,31 +373,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#007bff',
   },
   chatBubble: {
-    padding: 15,
-    marginVertical: 5,
-    marginHorizontal: 10,
-    borderRadius: 10,
-    maxWidth: '80%',
+    padding: 8,
+    paddingHorizontal: 12,
+    marginVertical: 1,
+    borderRadius: 15,
+    maxWidth: '75%',
   },
   chatBubbleUser: {
-    backgroundColor: '#dcf8c6',
+    backgroundColor: '#DCF8C6',
+    borderTopRightRadius: 5,
+    marginLeft: 40,
     alignSelf: 'flex-end',
   },
   chatBubbleOther: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 5,
+    borderWidth: 1,
+    borderColor: '#E2E2E2',
     alignSelf: 'flex-start',
   },
   senderName: {
-    fontWeight: 'bold',
-  },
-  senderUser: {
-    color: '#007bff',
+    fontSize: 12,
+    marginBottom: 2,
+    fontWeight: '600',
   },
   senderOther: {
-    color: '#000',
+    color: '#075E54',
   },
   chatText: {
     fontSize: 14,
+    lineHeight: 20,
+    color: '#000000',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -372,15 +411,28 @@ const styles = StyleSheet.create({
     padding: 10,
     borderTopWidth: 1,
     borderColor: '#ccc',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 8,
+    minHeight: 60,
   },
   input: {
     flex: 1,
-    height: 40,
+    minHeight: 40,
+    maxHeight: 120,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 20,
-    paddingHorizontal: 10,
+    borderColor: '#eee',
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     marginRight: 10,
+    backgroundColor: '#fafafa',
+    fontSize: 16,
+    color: '#000',
+    textAlignVertical: 'top',
   },
   icon: {
     marginRight: 20,
@@ -437,8 +489,9 @@ const styles = StyleSheet.create({
   },
   messageBubbleContainer: {
     flexDirection: 'row',
-    marginVertical: 5,
-    marginHorizontal: 10,
+    marginVertical: 2,
+    marginHorizontal: 8,
+    alignItems: 'flex-end',
   },
   userMessageContainer: {
     justifyContent: 'flex-end',
@@ -447,17 +500,23 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   messageAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 5,
-    alignSelf: 'flex-end',
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    marginRight: 8,
+    backgroundColor: '#E2E2E2',
   },
   messagesList: {
     padding: 10,
   },
   sendButton: {
     padding: 10,
+    backgroundColor: '#007bff',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 44,
+    height: 44,
   },
   sendButtonDisabled: {
     backgroundColor: '#ccc',
@@ -489,3 +548,4 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+export { Messages };

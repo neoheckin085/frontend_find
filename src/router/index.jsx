@@ -31,6 +31,7 @@ import NotificationScreen from '../components/Notifikasi';
 import PremiumScreen from '../components/Premium';
 import { useAuth } from '../../context/AuthContext';
 import ExploreScreen from '../button/Search';
+import Messages from '../button/Messages';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -206,6 +207,7 @@ const Router = () => {
         <>
           <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
           <Stack.Screen name="MainApp" component={MainApp} options={{ headerShown: false }} />
+          <Stack.Screen name="Messages" component={Messages} />
         </>
       ) : (
         <>

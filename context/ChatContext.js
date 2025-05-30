@@ -117,7 +117,7 @@ export const ChatProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await Api.get(`/chat/groups/${groupId}/messages`);
-      setMessages(response.data.data.reverse()); // Reverse to show newest at the bottom
+      setMessages([...response.data.data].reverse()); // Reverse agar urut lama ke baru
       setActiveChat(groupId);
       
       // Subscribe to the presence channel for this chat group
