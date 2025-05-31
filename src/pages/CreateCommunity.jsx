@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import Api from '../../libs/Api';
 import MapView, { Marker } from 'react-native-maps';
 import CheckBox from '@react-native-community/checkbox';
+import API_CONFIG from '../config/apiConfig';
 
 const CreateCommunity = ({ navigation }) => {
   const { user, token } = useAuth();
@@ -57,6 +58,16 @@ const CreateCommunity = ({ navigation }) => {
       console.log('Response data:', JSON.stringify(response.data, null, 2));
       
       if (Array.isArray(response.data)) {
+        // Log user photo data
+        response.data.forEach(user => {
+          console.log('User photo data:', {
+            userId: user.user_id,
+            name: user.name,
+            photo: user.photo,
+            photoUrl: user.photo ? getImageUrl(user.photo) : null
+          });
+        });
+        
         setUsers(response.data);
         console.log('Users set successfully:', response.data.length);
       } else {
@@ -149,42 +160,79 @@ const CreateCommunity = ({ navigation }) => {
     }
   };
 
-  const renderUserItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.userItem}
-      onPress={() => {
-        if (showOwnerModal) {
-          setSelectedOwner(item);
-          setShowOwnerModal(false);
-        } else {
-          const isSelected = selectedMembers.some(member => member.user_id === item.user_id);
-          if (isSelected) {
-            setSelectedMembers(selectedMembers.filter(member => member.user_id !== item.user_id));
+  const getImageUrl = (imagePath) => {
+    console.log('Getting image URL for path:', imagePath);
+    if (!imagePath) {
+      console.log('No image path provided');
+      return null;
+    }
+    if (imagePath.startsWith('http')) {
+      console.log('Path is already a URL:', imagePath);
+      return imagePath;
+    }
+    // Remove leading slash if present
+    const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    // Don't add storage/ if it's already in the path
+    const storagePath = cleanPath.startsWith('storage/') ? cleanPath : `storage/${cleanPath}`;
+    const fullUrl = API_CONFIG.getStorageUrl(storagePath);
+    console.log('Generated full URL:', fullUrl);
+    return fullUrl;
+  };
+
+  const renderUserItem = ({ item }) => {
+    console.log('Rendering user item:', {
+      userId: item.user_id,
+      name: item.name,
+      photo: item.photo,
+      photoUrl: item.photo ? getImageUrl(item.photo) : null
+    });
+    
+    return (
+      <TouchableOpacity
+        style={styles.userItem}
+        onPress={() => {
+          if (showOwnerModal) {
+            setSelectedOwner(item);
+            setShowOwnerModal(false);
           } else {
-            setSelectedMembers([...selectedMembers, item]);
+            const isSelected = selectedMembers.some(member => member.user_id === item.user_id);
+            if (isSelected) {
+              setSelectedMembers(selectedMembers.filter(member => member.user_id !== item.user_id));
+            } else {
+              setSelectedMembers([...selectedMembers, item]);
+            }
           }
-        }
-      }}
-    >
-      <Image
-        source={
-          item.photo
-            ? { uri: item.photo }
-            : require('../assets/default-avatar.jpg')
-        }
-        style={styles.userAvatar}
-      />
-      <View style={styles.userInfo}>
-        <Text style={styles.userName}>{item.name}</Text>
-        <Text style={styles.userEmail}>{item.email}</Text>
-      </View>
-      {showMembersModal && selectedMembers.some(member => member.user_id === item.user_id) && (
-        <View style={styles.selectedBadge}>
-          <Text style={styles.selectedBadgeText}>Dipilih</Text>
+        }}
+      >
+        <Image
+          source={
+            item.photo
+              ? { 
+                  uri: getImageUrl(item.photo),
+                  cache: 'reload'  // Add cache reload to force image refresh
+                }
+              : require('../assets/default-avatar.jpg')
+          }
+          style={styles.userAvatar}
+          onError={(error) => {
+            console.log('Image loading error for user:', item.name);
+            console.log('Photo path:', item.photo);
+            console.log('Full URL:', item.photo ? getImageUrl(item.photo) : 'using default image');
+            console.log('Error details:', error.nativeEvent);
+          }}
+        />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.name}</Text>
+          <Text style={styles.userEmail}>{item.email}</Text>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+        {showMembersModal && selectedMembers.some(member => member.user_id === item.user_id) && (
+          <View style={styles.selectedBadge}>
+            <Text style={styles.selectedBadgeText}>Dipilih</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
