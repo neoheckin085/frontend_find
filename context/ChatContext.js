@@ -78,34 +78,29 @@ export const ChatProvider = ({ children }) => {
       console.log('Fetching chat groups...');
       const response = await Api.get('/chat/groups');
       console.log('Chat groups response:', response.data);
-      setChatGroups(response.data);
+      
+      // Filter out private chats that have no messages
+      const filteredGroups = response.data.filter(group => {
+        if (!group.is_private) return true; // Always show group chats
+        if (group.messages && group.messages.length > 0) return true; // Show private chats with messages
+        return false; // Hide private chats without messages
+      });
+      
+      setChatGroups(filteredGroups);
     } catch (error) {
       console.error('Failed to fetch chat groups:', error);
       
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error('Response data:', error.response.data);
         console.error('Response status:', error.response.status);
         console.error('Response headers:', error.response.headers);
         setError(`Failed to load chat groups: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
       } else if (error.request) {
-        // The request was made but no response was received
         console.error('No response received:', error.request);
         setError('Failed to load chat groups: No response from server');
       } else {
-        // Something happened in setting up the request that triggered an Error
         console.error('Error message:', error.message);
         setError(`Failed to load chat groups: ${error.message}`);
-      }
-      
-      // For development: let's try the test endpoint
-      try {
-        console.log('Trying test endpoint...');
-        const testResponse = await Api.get('/test/chat-groups');
-        console.log('Test endpoint response:', testResponse.data);
-      } catch (testError) {
-        console.error('Test endpoint also failed:', testError);
       }
     } finally {
       setLoading(false);
@@ -148,6 +143,17 @@ export const ChatProvider = ({ children }) => {
         }
         return [...prev, response.data];
       });
+
+      // If this is a private chat and it's not in the chat list yet, add it
+      const chatGroup = chatGroups.find(g => g.chat_group_id === activeChat);
+      if (!chatGroup && response.data.chat_group?.is_private) {
+        // Fetch the chat group details and add to list
+        const groupResponse = await Api.get(`/chat/groups/${activeChat}`);
+        const newGroup = groupResponse.data;
+        // Add the message to the group data
+        newGroup.messages = [response.data];
+        setChatGroups(prev => [...prev, newGroup]);
+      }
       
       return response.data;
     } catch (error) {
@@ -203,20 +209,52 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Create a new chat group
-  const createChatGroup = async (name, userIds) => {
+  // Create a new chat group or get existing private chat
+  const createChatGroup = async (name, userIds, isPrivate = false) => {
     try {
-      const response = await Api.post('/chat/groups', {
+      // If this is a private chat, check if it already exists
+      if (isPrivate && userIds.length === 1) {
+        // Get all chat groups
+        const groupsResponse = await Api.get('/chat/groups');
+        const existingGroups = groupsResponse.data;
+        
+        // Look for an existing private chat with this user
+        const existingPrivateChat = existingGroups.find(group => 
+          group.is_private && 
+          group.users.some(u => u.user_id === userIds[0]) &&
+          group.users.length === 2 && // Must be exactly 2 users (current user + target user)
+          group.messages && group.messages.length > 0 // Must have messages
+        );
+
+        if (existingPrivateChat) {
+          console.log('Found existing private chat:', existingPrivateChat);
+          return existingPrivateChat;
+        }
+
+        // For new private chats, create but don't add to chat list yet
+        const privateChatResponse = await Api.post('/chat/groups', {
+          name,
+          capacity: 2, // Always 2 for private chats
+          is_private: true,
+          user_ids: userIds
+        });
+
+        // Don't refresh chat groups for new private chats
+        return privateChatResponse.data;
+      }
+
+      // For group chats, create and add to chat list immediately
+      const groupChatResponse = await Api.post('/chat/groups', {
         name,
-        capacity: userIds.length + 1, // +1 for the current user
-        is_private: userIds.length === 1, // If only one other user, it's a private chat
+        capacity: userIds.length + 1,
+        is_private: false,
         user_ids: userIds
       });
       
-      // Refresh chat groups
+      // Only refresh chat groups for group chats
       fetchChatGroups();
       
-      return response.data;
+      return groupChatResponse.data;
     } catch (error) {
       console.error('Failed to create chat group:', error);
       setError('Failed to create chat group');

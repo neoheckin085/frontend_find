@@ -12,6 +12,7 @@ import ChatGroupInfo from '../components/ChatGroupInfo';
 
 const ChatList = ({ navigation }) => {
   const { chatGroups, loading, error, fetchChatGroups } = useChat();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchChatGroups();
@@ -29,33 +30,39 @@ const ChatList = ({ navigation }) => {
   };
 
   const renderItem = ({ item }) => {
-    // Log chat group data for debugging
-    console.log('Rendering chat group:', {
-      name: item.name,
-      community: item.community,
-      communityImage: item.community?.gambar
-    });
+    // Get the other user for private chats
+    const otherUser = item.is_private ? item.users?.find(u => u.user_id !== user.user_id) : null;
 
     return (
       <TouchableOpacity onPress={() => rootNavigation.navigate('Messages', { chatGroup: item })}>
         <View style={styles.chatItem}>
           <Image 
             source={
-              item.community?.gambar
-                ? { uri: getImageUrl(item.community.gambar) }
-                : require('../assets/Find.png')
+              item.is_private
+                ? otherUser?.photo
+                  ? { uri: API_CONFIG.getStorageUrl(otherUser.photo) }
+                  : require('../assets/default-avatar.jpg')
+                : item.community?.gambar
+                  ? { uri: getImageUrl(item.community.gambar) }
+                  : require('../assets/Find.png')
             } 
             style={styles.avatar}
             onError={(error) => {
               console.log('Image loading error for chat:', item.name);
               console.log('Community:', item.community);
-              console.log('Image path:', item.community?.gambar);
-              console.log('Full URL:', item.community?.gambar ? getImageUrl(item.community.gambar) : 'using default image');
+              console.log('Image path:', item.is_private ? otherUser?.photo : item.community?.gambar);
+              console.log('Full URL:', item.is_private 
+                ? (otherUser?.photo ? API_CONFIG.getStorageUrl(otherUser.photo) : 'using default avatar')
+                : (item.community?.gambar ? getImageUrl(item.community.gambar) : 'using default image'));
               console.log('Error details:', error.nativeEvent);
             }}
           />
           <View style={styles.chatInfo}>
-            <Text style={styles.name}>{item.display_name || item.name}</Text>
+            <Text style={styles.name}>
+              {item.is_private 
+                ? otherUser?.name || 'Unknown User'
+                : item.display_name || item.name}
+            </Text>
             <Text style={styles.message} numberOfLines={1}>
               {item.messages && item.messages.length > 0 ? 
                 `${item.messages[0].user?.name || 'User'}: ${item.messages[0].message}` : 

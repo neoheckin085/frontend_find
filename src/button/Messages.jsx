@@ -30,26 +30,51 @@ const Messages = ({ route, navigation }) => {
   useEffect(() => {
     if (chatGroup?.chat_group_id) {
       loadMessages(chatGroup.chat_group_id);
+      
+      // Set custom header based on chat type
       navigation.setOptions({
         headerTitle: () => (
           <TouchableOpacity 
             onPress={() => setGroupInfoVisible(true)}
             style={styles.headerContainer}
           >
-            <Image 
-              source={
-                chatGroup.community?.gambar
-                  ? { uri: getImageUrl(chatGroup.community.gambar) }
-                  : require('../assets/Find.png')
-              }
-              style={styles.headerAvatar}
-            />
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>{chatGroup.display_name || chatGroup.name}</Text>
-              <Text style={styles.headerSubtitle}>
-                {chatGroup?.users?.length || 0} members
-              </Text>
-            </View>
+            {chatGroup.is_private ? (
+              // Private chat header
+              <>
+                <Image 
+                  source={
+                    chatGroup.users?.find(u => u.user_id !== user.user_id)?.photo
+                      ? { uri: API_CONFIG.getStorageUrl(chatGroup.users.find(u => u.user_id !== user.user_id).photo) }
+                      : require('../assets/default-avatar.jpg')
+                  }
+                  style={styles.headerAvatar}
+                />
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.headerTitle}>
+                    {chatGroup.users?.find(u => u.user_id !== user.user_id)?.name || 'Unknown User'}
+                  </Text>
+                  <Text style={styles.headerSubtitle}>Private Chat</Text>
+                </View>
+              </>
+            ) : (
+              // Group chat header
+              <>
+                <Image 
+                  source={
+                    chatGroup.community?.gambar
+                      ? { uri: getImageUrl(chatGroup.community.gambar) }
+                      : require('../assets/Find.png')
+                  }
+                  style={styles.headerAvatar}
+                />
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.headerTitle}>{chatGroup.display_name || chatGroup.name}</Text>
+                  <Text style={styles.headerSubtitle}>
+                    {chatGroup?.users?.length || 0} members
+                  </Text>
+                </View>
+              </>
+            )}
           </TouchableOpacity>
         ),
         headerTitleAlign: 'left',
@@ -122,6 +147,12 @@ const Messages = ({ route, navigation }) => {
       messages[index + 1].user?.user_id !== item.user?.user_id
     );
 
+    const handleUserPress = () => {
+      if (item.user && item.user.user_id !== user.user_id) {
+        navigation.navigate('UserProfile', { userId: item.user.user_id });
+      }
+    };
+
     return (
       <View style={[
         styles.messageBubbleContainer,
@@ -130,10 +161,12 @@ const Messages = ({ route, navigation }) => {
         {!isUser && (
           <View style={{ width: 35, marginRight: 8 }}>
             {showAvatar ? (
-              <Image 
-                source={getAvatar(item)} 
-                style={styles.messageAvatar}
-              />
+              <TouchableOpacity onPress={handleUserPress}>
+                <Image 
+                  source={getAvatar(item)} 
+                  style={styles.messageAvatar}
+                />
+              </TouchableOpacity>
             ) : null}
           </View>
         )}
@@ -142,9 +175,11 @@ const Messages = ({ route, navigation }) => {
           isUser ? styles.chatBubbleUser : styles.chatBubbleOther
         ]}>
           {!isUser && (
-            <Text style={[styles.senderName, styles.senderOther]}>
-              {item.user ? item.user.name : 'Unknown User'}
-            </Text>
+            <TouchableOpacity onPress={handleUserPress}>
+              <Text style={[styles.senderName, styles.senderOther]}>
+                {item.user ? item.user.name : 'Unknown User'}
+              </Text>
+            </TouchableOpacity>
           )}
           <Text style={styles.chatText}>{item.message}</Text>
         </View>
@@ -166,6 +201,7 @@ const Messages = ({ route, navigation }) => {
             onClose={() => setGroupInfoVisible(false)}
             chatGroup={chatGroup}
             onLeaveGroup={handleLeaveGroup}
+            navigation={navigation}
           />
 
           {/* Messages List */}

@@ -141,16 +141,36 @@ const Comment = () => {
   const renderComments = (comments, depth = 0) => {
     return comments.map(comment => (
       <View key={comment.comment_id} style={[styles.commentContainer, { marginLeft: depth * 20 }]}> 
-        <Image 
-          source={
-            comment.user?.photo 
-              ? { uri: API_CONFIG.getStorageUrl(comment.user.photo) }
-              : require('../assets/default-avatar.jpg')
-          }
-          style={styles.avatar}
-        />
+        <TouchableOpacity 
+          onPress={() => {
+            if (comment.user?.user_id !== user.user_id) {
+              navigation.navigate('UserProfile', { userId: comment.user?.user_id });
+            }
+          }}
+          disabled={comment.user?.user_id === user.user_id}
+        >
+          <Image 
+            source={
+              comment.user?.photo 
+                ? { uri: API_CONFIG.getStorageUrl(comment.user.photo) }
+                : require('../assets/default-avatar.jpg')
+            }
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
         <View style={styles.commentContent}>
-          <Text style={styles.username}>{comment.user?.name || 'Unknown User'}</Text>
+          <TouchableOpacity 
+            onPress={() => {
+              if (comment.user?.user_id !== user.user_id) {
+                navigation.navigate('UserProfile', { userId: comment.user?.user_id });
+              }
+            }}
+            disabled={comment.user?.user_id === user.user_id}
+          >
+            <Text style={[styles.username, comment.user?.user_id === user.user_id ? styles.ownUsername : null]}>
+              {comment.user?.name || 'Unknown User'}
+            </Text>
+          </TouchableOpacity>
           <Text style={styles.commentText}>{comment.content}</Text>
           <View style={styles.commentActions}>
             <TouchableOpacity onPress={() => handleReplyComment(comment.comment_id, comment.user?.name)}>
@@ -300,6 +320,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'blue',
     borderRadius: 20
+  },
+  ownUsername: {
+    color: '#666',
   },
 });
 

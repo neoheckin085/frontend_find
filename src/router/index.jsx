@@ -33,6 +33,7 @@ import { useAuth } from '../../context/AuthContext';
 import ExploreScreen from '../button/Search';
 import Messages from '../button/Messages';
 import CreateCommunity from '../pages/CreateCommunity';
+import UserProfile from '../components/UserProfile';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -232,6 +233,14 @@ const Router = () => {
       <Stack.Screen name="Search" component={ExploreScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
       <Stack.Screen name="KomunitasScreen" component={KomunitasScreen} options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="UserProfile" 
+        component={UserProfile}
+        options={{
+          title: 'User Profile',
+          headerTitleAlign: 'center',
+        }}
+      />
     </Stack.Navigator>
   );
 };

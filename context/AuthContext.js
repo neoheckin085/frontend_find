@@ -181,19 +181,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const getUserById = async (setDetailUser, setError, setLoading) => {
+    const getUserById = async (setDetailUser, setError, setLoading, targetUserId = null) => {
         try {
             const storedToken = await AsyncStorage.getItem('token');
             if (!storedToken) {
                 throw new Error('No token found');
             }
             
-            const storedUserId = await AsyncStorage.getItem('userId');
-            if (!storedUserId) {
+            // Use targetUserId if provided, otherwise use the logged-in user's ID
+            const userId = targetUserId || await AsyncStorage.getItem('userId');
+            if (!userId) {
                 throw new Error('No user ID found');
             }
     
-            const response = await Api.get(`/tampilkan/${storedUserId}`, {
+            const response = await Api.get(`/tampilkan/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${storedToken}`,
                 },
