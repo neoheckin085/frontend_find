@@ -17,6 +17,9 @@ const Messages = ({ route, navigation }) => {
   const flatListRef = useRef(null);
   const [inputHeight, setInputHeight] = useState(40);
 
+  // Predefined emoji list to avoid using the emoji selector library
+  const commonEmojis = ['😊', '😂', '❤️', '👍', '🎉', '🙏', '😍', '😭', '😡', '🤔'];
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
@@ -60,16 +63,23 @@ const Messages = ({ route, navigation }) => {
     }
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim()) {
-      sendMessage(inputMessage);
-      setInputMessage('');
+  const handleEmojiPress = (emoji) => {
+    try {
+      setInputMessage(prev => prev + emoji);
+    } catch (err) {
+      console.error('Error adding emoji:', err);
     }
   };
 
-  const handleEmojiSelect = (emoji) => {
-    setInputMessage(inputMessage + emoji);
-    setEmojiModalVisible(false);
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    
+    try {
+      await sendMessage(inputMessage);
+      setInputMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+    }
   };
 
   const handleLeaveGroup = async (groupId) => {
@@ -171,7 +181,10 @@ const Messages = ({ route, navigation }) => {
 
           {/* Message Input */}
           <View style={styles.inputContainer}>
-            <TouchableOpacity onPress={() => setEmojiModalVisible(true)} style={styles.emojiButton}>
+            <TouchableOpacity 
+              onPress={() => setEmojiModalVisible(!emojiModalVisible)}
+              style={styles.emojiButton}
+            >
               <Text style={styles.emojiButtonText}>😊</Text>
             </TouchableOpacity>
             <TextInput
@@ -191,29 +204,33 @@ const Messages = ({ route, navigation }) => {
               <FontAwesome name="send" size={20} color="#ffffff" />
             </TouchableOpacity>
           </View>
-        </View>
-        {/* Emoji Selector Modal */}
-        <Modal
-          visible={emojiModalVisible}
-          transparent={true}
-          animationType="slide"
-        >
-          <View style={styles.emojiContainer}>
-            <View style={styles.emojiHeader}>
-              <TouchableOpacity onPress={() => setEmojiModalVisible(false)}>
-                <Text style={styles.closeButton}>Close</Text>
-              </TouchableOpacity>
+
+          {/* Simple Emoji Picker */}
+          {emojiModalVisible && (
+            <View style={styles.emojiPickerContainer}>
+              <View style={styles.emojiPickerHeader}>
+                <Text style={styles.emojiPickerTitle}>Emoji</Text>
+                <TouchableOpacity onPress={() => setEmojiModalVisible(false)}>
+                  <Text style={styles.closeButton}>Close</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.emojiGrid}>
+                {commonEmojis.map((emoji, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.emojiItem}
+                    onPress={() => {
+                      handleEmojiPress(emoji);
+                      setEmojiModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-            <EmojiSelector
-              onEmojiSelected={emoji => {
-                setInputMessage(prev => prev + emoji);
-                setEmojiModalVisible(false);
-              }}
-              showSearchBar={false}
-              columns={8}
-            />
-          </View>
-        </Modal>
+          )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -342,22 +359,43 @@ const styles = StyleSheet.create({
   emojiButtonText: {
     fontSize: 24,
   },
-  emojiContainer: {
-    flex: 1,
+  emojiPickerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: 'white',
-    marginTop: 'auto',
-  },
-  emojiHeader: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
     padding: 10,
+    maxHeight: 200,
+  },
+  emojiPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
   },
-  closeButton: {
-    color: '#007bff',
+  emojiPickerTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  emojiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingTop: 10,
+  },
+  emojiItem: {
+    width: '20%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emojiText: {
+    fontSize: 24,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -383,6 +421,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  errorBanner: undefined,
+  errorBannerText: undefined,
+  errorBannerClose: undefined,
 });
 
 export default Messages; 
