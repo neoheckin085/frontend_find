@@ -18,6 +18,7 @@ import API_CONFIG from '../../src/config/apiConfig';
 const KomunitasScreen = ({ navigation }) => {
   const [communities, setCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -112,8 +113,7 @@ const KomunitasScreen = ({ navigation }) => {
   };
 
   const handleMakeNewCommunity = () => {
-    // Handle make new community
-    console.log('Make new community pressed');
+    navigation.navigate('CreateCommunity');
   };
 
   const renderCommunityItem = (community) => (
@@ -168,16 +168,18 @@ const KomunitasScreen = ({ navigation }) => {
               {communities.map(renderCommunityItem)}
             </View>
 
-            <TouchableOpacity
-              style={styles.makeNewCommunityButton}
-              onPress={handleMakeNewCommunity}
-              activeOpacity={0.7}
-            >
-              <View style={styles.plusIcon}>
-                <Text style={styles.plusText}>+</Text>
-              </View>
-              <Text style={styles.makeNewCommunityText}>Make new community</Text>
-            </TouchableOpacity>
+            {user?.is_admin === true && (
+              <TouchableOpacity
+                style={styles.makeNewCommunityButton}
+                onPress={handleMakeNewCommunity}
+                activeOpacity={0.7}
+              >
+                <View style={styles.plusIcon}>
+                  <Text style={styles.plusText}>+</Text>
+                </View>
+                <Text style={styles.makeNewCommunityText}>Make new community</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </ScrollView>

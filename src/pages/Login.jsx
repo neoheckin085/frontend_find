@@ -21,16 +21,11 @@ const Login = ({ navigation }) => {
 
     const handleLogin = async () => {
         if (isLoggingIn || !email || !password) {
-            if (!email || !password) {
-            }
             return;
         }
         setIsLoggingIn(true);
-
         const loginSuccessful = await logs(email, password);
-
         setIsLoggingIn(false);
-
         if (loginSuccessful) {
             console.log("Login successful. Router will handle navigation to MainApp.");
         } else {
@@ -71,11 +66,11 @@ const Login = ({ navigation }) => {
                     {displayContextErrors()}
 
                     <TextInput
-                        placeholder="Email"
+                        placeholder="Email atau Username"
                         placeholderTextColor="#555"
                         value={email}
                         onChangeText={setEmail}
-                        keyboardType="email-address"
+                        keyboardType="default"
                         autoCapitalize="none"
                         style={styles.input}
                         editable={!isLoggingIn}

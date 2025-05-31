@@ -32,6 +32,7 @@ import PremiumScreen from '../components/Premium';
 import { useAuth } from '../../context/AuthContext';
 import ExploreScreen from '../button/Search';
 import Messages from '../button/Messages';
+import CreateCommunity from '../pages/CreateCommunity';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -208,6 +209,7 @@ const Router = () => {
           <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
           <Stack.Screen name="MainApp" component={MainApp} options={{ headerShown: false }} />
           <Stack.Screen name="Messages" component={Messages} />
+          <Stack.Screen name="CreateCommunity" component={CreateCommunity} options={{ title: 'Buat Komunitas' }} />
         </>
       ) : (
         <>

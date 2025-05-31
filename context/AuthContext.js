@@ -26,12 +26,18 @@ export const AuthProvider = ({ children }) => {
                         });
 
                         if (response.data && response.data.user_id) {
+                            // Check if user is admin from AsyncStorage
+                            const isAdmin = await AsyncStorage.getItem('is_admin');
+                            if (isAdmin === 'true') {
+                                response.data.is_admin = true;
+                            }
                             setUser(response.data);
                             await AsyncStorage.setItem('userId', response.data.user_id.toString());
                         } else {
                             console.warn("User data from API is not in expected format:", response.data);
                             await AsyncStorage.removeItem('token');
                             await AsyncStorage.removeItem('userId');
+                            await AsyncStorage.removeItem('is_admin');
                             setToken(null);
                             setUser(null);
                         }
@@ -40,6 +46,7 @@ export const AuthProvider = ({ children }) => {
                         console.error("Failed to fetch user with stored token:", e);
                         await AsyncStorage.removeItem('token');
                         await AsyncStorage.removeItem('userId');
+                        await AsyncStorage.removeItem('is_admin');
                         setToken(null);
                         setUser(null);
                     }
@@ -57,36 +64,28 @@ export const AuthProvider = ({ children }) => {
     const logs = async (email, password) => {
         setError({});
         try {
-            console.log('Attempting login with:', { email, device_name: `${Platform.OS} ${Platform.Version}` });
             const response = await Api.post('/login', {
                 email,
                 password,
                 device_name: `${Platform.OS} ${Platform.Version}`,
             });
-
-            console.log('Login response:', response.data);
-
             if (response.data?.token && response.data?.user) {
                 await AsyncStorage.setItem('token', response.data.token);
-                // Store user_id for chat functionality
                 if (response.data.user.user_id) {
                     await AsyncStorage.setItem('userId', response.data.user.user_id.toString());
                 }
-                setToken(response.data.token);
+                // Store admin status in AsyncStorage
+                if (response.data.user.is_admin) {
+                    await AsyncStorage.setItem('is_admin', 'true');
+                }
                 setUser(response.data.user);
+                setToken(response.data.token);
                 return true;
             } else {
-                console.error("Invalid response structure:", response.data);
                 setError({ general: 'Invalid server response structure' });
                 return false;
             }
         } catch (e) {
-            console.error('Login error:', {
-                status: e.response?.status,
-                data: e.response?.data,
-                message: e.message
-            });
-
             if (e.response?.status === 422 && e.response?.data?.errors) {
                 setError(e.response.data.errors);
             } else if (e.response?.data?.message) {
@@ -170,7 +169,8 @@ export const AuthProvider = ({ children }) => {
             console.log('API Logout error (will proceed with local logout):', error.response ? error.response.data : error.message);
         } finally {
             await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('userId'); // Remove userId as well
+            await AsyncStorage.removeItem('userId');
+            await AsyncStorage.removeItem('is_admin');
             setToken(null);
             setUser(null);
             if (navigation) {
@@ -179,7 +179,9 @@ export const AuthProvider = ({ children }) => {
                 console.warn("Logout called without navigation object.");
             }
         }
-    };    const getUserById = async (setDetailUser, setError, setLoading) => {
+    };
+
+    const getUserById = async (setDetailUser, setError, setLoading) => {
         try {
             const storedToken = await AsyncStorage.getItem('token');
             if (!storedToken) {
