@@ -125,7 +125,7 @@ const CreateCommunity = ({ navigation }) => {
       selectedMembers.forEach(member => {
         formData.append('anggota[]', member.user_id);
       });
-      formData.append('create_chat_group', createChatGroup);
+      formData.append('create_chat_group', createChatGroup ? '1' : '0');
       formData.append('gambar', {
         uri: image.uri,
         type: image.type,
