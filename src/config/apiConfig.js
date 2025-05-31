@@ -5,6 +5,11 @@ const DEV = true; // Set this to false for production
 // Konfigurasi IP address sesuai environment
 const IP_ADDRESS = '192.168.135.61'; // Ganti dengan IP address komputer Anda
 
+// Function to detect if running on emulator
+const isEmulator = () => {
+  return Platform.OS === 'android' && Platform.constants.Brand === 'google';
+};
+
 const config = {
     development: {
         android: {
@@ -25,15 +30,11 @@ const config = {
 const getBaseUrl = () => {
     if (DEV) {
         if (Platform.OS === 'android') {
-            // Untuk physical device Android, gunakan IP address
-            return config.development.android.device;
-            // Untuk emulator Android, gunakan ini:
-            // return config.development.android.emulator;
+            // Use emulator URL if running on emulator, otherwise use device URL
+            return isEmulator() ? config.development.android.emulator : config.development.android.device;
         } else if (Platform.OS === 'ios') {
-            // Untuk physical device iOS, gunakan IP address
-            return config.development.ios.device;
-            // Untuk simulator iOS, gunakan ini:
-            // return config.development.ios.simulator;
+            // For iOS, use simulator URL if running on simulator, otherwise use device URL
+            return Platform.isPad || Platform.isTV ? config.development.ios.simulator : config.development.ios.device;
         }
     }
     return config.production.api;
@@ -54,8 +55,20 @@ const API_CONFIG = {
     getStorageUrl: function(path) {
         if (!path) return null;
         if (path.startsWith('http')) return path;
+        
+        // Remove any leading slashes
         const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-        return `${this.BASE_URL}/${cleanPath}`;
+        
+        // Log the URL generation
+        console.log('Generating storage URL:', {
+            originalPath: path,
+            cleanPath: cleanPath,
+            baseUrl: this.BASE_URL,
+            fullUrl: `${this.BASE_URL}/storage/${cleanPath}`
+        });
+        
+        // Always use /storage/ prefix for consistency
+        return `${this.BASE_URL}/storage/${cleanPath}`;
     }
 };
 
