@@ -1,12 +1,23 @@
-//taruh di D:\find\frontend_find\src\button\Post.jsx
-
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, Platform, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../context/AuthContext';
 import Api from '../../libs/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DropDownPicker from 'react-native-dropdown-picker';
+import Icon from 'react-native-vector-icons/Ionicons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const PostScreen = ({ navigation, route }) => {
   const { user } = useAuth();
@@ -24,10 +35,7 @@ const PostScreen = ({ navigation, route }) => {
   }, [selectedCommunity]);
 
   const pickMedia = (fromCamera = false) => {
-    const options = {
-      mediaType: 'photo', // Hanya foto sesuai dengan backend
-      quality: 1,
-    };
+    const options = { mediaType: 'photo', quality: 1 };
 
     const callback = (response) => {
       if (!response.didCancel && !response.errorCode) {
@@ -44,109 +52,58 @@ const PostScreen = ({ navigation, route }) => {
 
   const createFormData = (photo) => {
     const formData = new FormData();
-    
     formData.append('title', title);
     formData.append('description', description);
     formData.append('community_id', selectedCommunity.community_id);
     formData.append('user_id', user.user_id);
-    
+
     if (photo) {
-      // Pastikan nama file dan tipe file diatur dengan benar
       const fileType = photo.type || 'image/jpeg';
       const fileName = photo.fileName || `photo_${Date.now()}.${fileType.split('/')[1]}`;
-      
-      console.log('Uploading photo:', {
-        name: fileName,
-        type: fileType,
-        uri: photo.uri
-      });
-      
       formData.append('image', {
         name: fileName,
         type: fileType,
         uri: Platform.OS === 'ios' ? photo.uri.replace('file://', '') : photo.uri,
       });
     }
-    
     return formData;
   };
 
   const handlePost = async () => {
-    if (!title.trim()) {
-      Alert.alert('Error', 'Judul tidak boleh kosong');
-      return;
-    }
-    
-    if (!description.trim()) {
-      Alert.alert('Error', 'Deskripsi tidak boleh kosong');
-      return;
-    }
-
-    if (!media) {
-      Alert.alert('Error', 'Pilih gambar dulu');
-      return;
-    }
-    
-    if (!selectedCommunity) {
-      Alert.alert('Error', 'Komunitas tidak dipilih');
-      return;
-    }
+    if (!title.trim()) return Alert.alert('Error', 'Title cannot be empty');
+    if (!description.trim()) return Alert.alert('Error', 'Description cannot be empty');
+    if (!media) return Alert.alert('Error', 'Select the image');
+    if (!selectedCommunity) return Alert.alert('Error', 'Community not selected');
 
     setLoading(true);
-    
     try {
-      // Buat FormData
       const formData = createFormData(media);
-      
-      // Log untuk debugging
-      console.log('Sending post with data:', {
-        title,
-        description,
-        communityId: selectedCommunity.community_id,
-        mediaUri: media.uri,
-        mediaType: media.type,
-        mediaName: media.fileName
-      });
-      
-      // Kirim request ke server
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert('Error', 'Anda perlu login kembali');
+        Alert.alert('Error', 'You need to log back in');
         setLoading(false);
         return;
       }
-      
-      // Gunakan Api.post langsung untuk lebih banyak kontrol
+
       const response = await Api.post('/post', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
-      console.log('Post response:', response.data);
-      Alert.alert(
-        'Sukses',
-        'Postingan berhasil dibuat!',
-        [{ text: 'OK', onPress: () => navigation.navigate('MainApp', { screen: 'Home' }) }]
-      );
-      
-      // Reset form
+
+      Alert.alert('Sukses', 'Postingan berhasil dibuat!', [
+        { text: 'OK', onPress: () => navigation.navigate('MainApp', { screen: 'Home' }) },
+      ]);
       setTitle('');
       setDescription('');
       setMedia(null);
     } catch (error) {
       console.error('Post error:', error);
-      console.error('Error response:', error.response?.data);
-      
-      // Menangani error khusus untuk izin posting
       if (error.response?.data?.error?.includes('not allowed to post')) {
-        Alert.alert('Error', 'Anda tidak memiliki izin untuk posting di komunitas ini. Hanya pemilik yang dapat posting.');
+        Alert.alert('Error', 'You do not have permission to post in this community. Only owners can post.');
       } else {
-        Alert.alert(
-          'Error',
-          'Terjadi kesalahan saat membuat postingan. Silakan coba lagi.'
-        );
+        Alert.alert('Error', 'An error occurred while creating the post. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -154,78 +111,71 @@ const PostScreen = ({ navigation, route }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>New Post</Text>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Judul Postingan</Text>
-          <TextInput
-            placeholder="Judul postingan"
-            value={title}
-            onChangeText={setTitle}
-            style={styles.titleInput}
-          />
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New post</Text>
         </View>
 
-        {/* Selected Community Info */}
-        <View style={styles.communityInfo}>
-          <Text style={styles.inputLabel}>Komunitas:</Text>
-          <Text style={styles.communityName}>{selectedCommunity?.name}</Text>
+        <Text style={styles.label}>Post Title</Text>
+        <TextInput
+          placeholder="The title"
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+        />
+
+        <View style={{ backgroundColor: '#f2f2f2', borderRadius: 16, padding: 12, marginHorizontal: 20, marginBottom: 10 }}>
+        <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Community:</Text>
+        <Text style={{ fontSize: 16 }}>{selectedCommunity?.name}</Text>
         </View>
 
-        {/* Image Preview */}
         <TouchableOpacity style={styles.previewBox} onPress={() => pickMedia(false)}>
           {media ? (
-            <>
-              <Image source={{ uri: media.uri }} style={styles.previewMedia} />
-              <Text style={styles.mediaInfo}>
-                {media.fileName || 'Gambar dipilih'}
-              </Text>
-            </>
+            <Image source={{ uri: media.uri }} style={styles.previewMedia} />
           ) : (
-            <Text style={styles.placeholder}>Tap untuk memilih gambar</Text>
+            <Text style={styles.placeholder}>Press to select an image</Text>
           )}
         </TouchableOpacity>
 
-        {/* Description Input */}
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.inputLabel}>Deskripsi Postingan</Text>
-          <TextInput
-            placeholder="Deskripsi postingan"
-            value={description}
-            onChangeText={setDescription}
-            style={styles.caption}
-            multiline={true}
-            numberOfLines={8}
-            textAlignVertical="top"
-            returnKeyType="default"
-            blurOnSubmit={false}
-          />
-        </View>
-
-        {/* Add extra padding at the bottom for buttons */}
-        <View style={{ height: 100 }} />
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          placeholder="Write something..."
+          value={description}
+          onChangeText={setDescription}
+          style={styles.caption}
+          multiline
+        />
       </ScrollView>
 
-      {/* Fixed Button Container */}
+      {/* Bottom Buttons */}
       <View style={styles.fixedButtonContainer}>
         <TouchableOpacity style={styles.cameraButton} onPress={() => pickMedia(true)}>
-          <Text style={styles.buttonText}>📷 Kamera</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <FontAwesome name="camera" size={20} color="#fff" />
+            <Text style={styles.buttonText}> Kamera</Text>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.postButton, loading && styles.disabledButton]} 
+
+        <TouchableOpacity
+          style={[styles.postButton, loading && styles.disabledButton]}
           onPress={handlePost}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.buttonText}>🚀 Post</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <FontAwesome name="share" size={20} color="#fff" />
+              <Text style={styles.buttonText}> Post</Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -239,94 +189,78 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 16,
   },
-  contentContainer: {
-    flex: 1,
-    marginTop: 10,
+  scrollContainer: {
+    paddingBottom: 150,
   },
-  title: {
-    fontSize: 22,
+  header: {
+    backgroundColor: '#000',
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 12,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
     fontWeight: 'bold',
-    alignSelf: 'center',
-    marginBottom: 12,
   },
-  titleInput: {
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  pickerContainer: {
-    marginBottom: 12,
-  },
-  pickerLabel: {
-    fontSize: 16,
-    marginBottom: 5,
+  label: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
     fontWeight: '500',
+    color: '#000',
   },
-  pickerWrapper: {
-    marginBottom: 5,
-    marginTop: 5,
-  },
-  dropdownStyle: {
-    borderColor: '#ddd',
-    borderWidth: 1,
+  input: {
+    marginHorizontal: 16,
+    padding: 12,
+    backgroundColor: '#fff',
     borderRadius: 8,
-  },
-  dropdownContainerStyle: {
-    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 8,
+    borderColor: '#ddd',
+    marginBottom: 24,
   },
-  dropdownTextStyle: {
-    fontSize: 16,
-  },
-  noCommunities: {
-    color: 'red',
+  communityName: {
+    marginHorizontal: 16,
+    marginTop: 4,
+    fontSize: 14,
+    color: '#888',
     fontStyle: 'italic',
-    marginBottom: 10,
   },
   previewBox: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: '#eee',
+    margin: 16,
+    height: 200,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
     overflow: 'hidden',
   },
   previewMedia: {
     width: '100%',
-    height: '90%',
+    height: '100%',
     resizeMode: 'cover',
   },
-  mediaInfo: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 5,
-  },
   placeholder: {
-    color: '#aaa',
     fontSize: 16,
-  },
-  descriptionContainer: {
-    marginTop: 12,
-    marginBottom: 12,
+    color: '#444',
   },
   caption: {
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
+    marginHorizontal: 16,
     padding: 12,
-    fontSize: 16,
     backgroundColor: '#fff',
-    minHeight: 200,
-    maxHeight: 400,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
     textAlignVertical: 'top',
+    minHeight: 100,
   },
   fixedButtonContainer: {
     position: 'absolute',
@@ -367,28 +301,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
     fontSize: 15,
-  },
-  inputContainer: {
-    marginBottom: 12,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 6,
-    color: '#212121',
-  },
-  communityInfo: {
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-  },
-  communityName: {
-    fontSize: 16,
-    color: '#212121',
-    fontWeight: '500',
-    marginTop: 4,
+    marginLeft: 6,
   },
 });

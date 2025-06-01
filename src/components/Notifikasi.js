@@ -191,7 +191,7 @@ const NotificationScreen = () => {
         ListEmptyComponent={
           !loading && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Tidak ada notifikasi</Text>
+              <Text style={styles.emptyText}>No Notification</Text>
             </View>
           )
         }

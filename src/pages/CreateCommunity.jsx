@@ -228,12 +228,12 @@ const CreateCommunity = ({ navigation }) => {
           {latLng.latitude ? `Lokasi: ${latLng.latitude.toFixed(6)}, ${latLng.longitude.toFixed(6)}` : 'Select Location'}
         </Text>
         {latLng.latitude && (
-          <Text style={styles.locationSubText}>Tap untuk mengubah lokasi</Text>
+          <Text style={styles.locationSubText}>Tap to change location</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-        <Text style={styles.imagePickerText}>{image ? 'Ganti Gambar' : 'Pilih Gambar Komunitas'}</Text>
+        <Text style={styles.imagePickerText}>{image ? 'Change Image' : 'Select Community Image'}</Text>
       </TouchableOpacity>
 
       {image && (
@@ -242,7 +242,7 @@ const CreateCommunity = ({ navigation }) => {
 
       <View style={styles.checkboxRow}>
         <CheckBox value={createChatGroup} onValueChange={setCreateChatGroup} />
-        <Text style={styles.checkboxLabel}>Buat grup chat untuk komunitas ini</Text>
+        <Text style={styles.checkboxLabel}>Create a chat group for this community</Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -251,7 +251,7 @@ const CreateCommunity = ({ navigation }) => {
           onPress={handleSubmit}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Buat Komunitas</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Community</Text>}
         </TouchableOpacity>
       </View>
 
@@ -270,7 +270,7 @@ const CreateCommunity = ({ navigation }) => {
             {latLng.latitude && latLng.longitude && <Marker coordinate={latLng} />}
           </MapView>
           <TouchableOpacity style={styles.closeMapBtn} onPress={() => setShowMap(false)}>
-            <Text style={styles.closeMapText}>Tutup Peta</Text>
+            <Text style={styles.closeMapText}>Close Map</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -278,7 +278,7 @@ const CreateCommunity = ({ navigation }) => {
       <Modal visible={showOwnerModal || showMembersModal} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{showOwnerModal ? 'Pilih Owner' : 'Pilih Member'}</Text>
+            <Text style={styles.modalTitle}>{showOwnerModal ? 'Select Owner' : 'Select Member'}</Text>
             <TouchableOpacity onPress={() => { setShowOwnerModal(false); setShowMembersModal(false); }}>
               <Text style={styles.closeButtonText}>×</Text>
             </TouchableOpacity>
@@ -296,13 +296,33 @@ const CreateCommunity = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#F1F5F9' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, color: '#0F172A', textAlign: 'center' },
-  input: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16,
-    fontSize: 16, color: '#0F172A', borderWidth: 1, borderColor: '#E2E8F0'
+  container: {
+    flex: 1, 
+    padding: 24, 
+    backgroundColor: '#F1F5F9' 
   },
-  textArea: { height: 140, textAlignVertical: 'top', lineHeight: 22, paddingTop: 12 },
+  title: {
+   fontSize: 28,
+   fontWeight: '700', 
+   marginBottom: 24, 
+   color: '#0F172A', 
+   textAlign: 'center' 
+  },
+  input: {
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 16, 
+    padding: 16, marginBottom: 16,
+    fontSize: 16, 
+    color: '#0F172A', 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0'
+  },
+  textArea: {
+    height: 140, 
+    textAlignVertical: 'top', 
+    lineHeight: 22, 
+    paddingTop: 12 
+  },
   selectButton: { 
     backgroundColor: '#FFFFFF', 
     borderRadius: 16, 
@@ -323,17 +343,41 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   imagePickerButton: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 16, 
+    padding: 16, 
+    marginBottom: 16,
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    alignItems: 'center'
   },
-  imagePickerText: { fontSize: 16, color: '#0F172A', fontWeight: '500' },
-  imagePreview: { width: '100%', height: 200, borderRadius: 16, backgroundColor: '#E2E8F0', marginBottom: 16 },
+  imagePickerText: {
+    fontSize: 16, 
+    color: '#0F172A', 
+    fontWeight: '500' 
+  },
+  imagePreview: {
+    width: '100%', 
+    height: 200, 
+    borderRadius: 16, 
+    backgroundColor: '#E2E8F0', 
+    marginBottom: 16 },
   checkboxRow: {
-    flexDirection: 'row', alignItems: 'center', padding: 16,
-    backgroundColor: '#FFFFFF', borderRadius: 16,
-    borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16,
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 16,
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    marginBottom: 16
   },
-  checkboxLabel: { marginLeft: 12, fontSize: 15, fontWeight: '500', color: '#0F172A' },
+  checkboxLabel: {
+    marginLeft: 12, 
+     fontSize: 15, 
+     fontWeight: '500', 
+     color: '#0F172A' 
+    },
   buttonContainer: {
     paddingHorizontal: 10,
     paddingBottom: 20,
@@ -352,36 +396,91 @@ const styles = StyleSheet.create({
     elevation: 4,
     width: '100%',
   },
-  buttonDisabled: { backgroundColor: '#CBD5E1' },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  modalContainer: { flex: 1, backgroundColor: '#fff' },
+  buttonDisabled: {
+    backgroundColor: '#CBD5E1' 
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16, 
+    fontWeight: '600'
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff'
+  },
   modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 20, borderBottomWidth: 1, borderBottomColor: '#E2E8F0'
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0'
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#0F172A' },
-  closeButtonText: { fontSize: 28, color: '#0F172A' },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700', 
+    color: '#0F172A' 
+  },
+  closeButtonText: {
+    fontSize: 28, 
+    color: '#0F172A' 
+  },
   userItem: {
-    flexDirection: 'row', alignItems: 'center', padding: 16,
-    borderRadius: 16, backgroundColor: '#FFFFFF', marginBottom: 12,
-    borderWidth: 1, borderColor: '#E2E8F0'
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16,
+    borderRadius: 16, 
+    backgroundColor: '#FFFFFF', 
+    marginBottom: 12,
+    borderWidth: 1, 
+    borderColor: '#E2E8F0'
   },
-  userAvatar: { width: 48, height: 48, borderRadius: 24, marginRight: 12 },
-  userInfo: { flex: 1 },
-  userName: { fontSize: 16, fontWeight: '600', color: '#0F172A' },
-  userEmail: { fontSize: 14, color: '#64748B' },
+  userAvatar: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 24, 
+    marginRight: 12 
+  },
+  userInfo: { 
+    flex: 1 
+  },
+  userName: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: '#0F172A' 
+  },
+  userEmail: { 
+    fontSize: 14, 
+    color: '#64748B' 
+  },
   selectedBadge: {
-    backgroundColor: '#2563EB', paddingHorizontal: 12,
-    paddingVertical: 6, borderRadius: 12
+    backgroundColor: '#2563EB', 
+    paddingHorizontal: 12,
+    paddingVertical: 6, 
+    borderRadius: 12
   },
-  selectedBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  selectedBadgeText: { 
+    color: '#FFFFFF', 
+    fontSize: 12, 
+    fontWeight: '600' 
+  },
   closeMapBtn: {
-    position: 'absolute', bottom: 30, alignSelf: 'center',
-    backgroundColor: '#2563EB', paddingHorizontal: 24,
-    paddingVertical: 14, borderRadius: 16
+    position: 'absolute', 
+    bottom: 30, 
+    alignSelf: 'center',
+    backgroundColor: '#2563EB', 
+    paddingHorizontal: 24,
+    paddingVertical: 14, 
+    borderRadius: 16
   },
-  closeMapText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  userListContent: { padding: 20 },
+  closeMapText: { 
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  userListContent: { 
+    padding: 20 
+  },
   locationSubText: {
     fontSize: 13,
     color: '#64748B',

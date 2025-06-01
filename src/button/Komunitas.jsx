@@ -113,7 +113,7 @@ const KomunitasScreen = ({ navigation }) => {
   };
 
   const handleMakeNewCommunity = () => {
-    navigation.navigate('CreateCommunity');
+    navigation.navigate('CommunityInterestScreen');
   };
 
   const renderCommunityItem = (community) => (
@@ -152,9 +152,8 @@ const KomunitasScreen = ({ navigation }) => {
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
-          <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Komunitas</Text>
+        <Text style={styles.headerTitle}>Community</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

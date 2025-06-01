@@ -211,16 +211,16 @@ const Join = () => {
         <View style={styles.infoContainer}>
           <Text style={styles.title}>{community.name}</Text>
           <Text style={styles.subtitle}>
-            Oleh: {community.owner ? community.owner.name : 'Unknown'}
+            By: {community.owner ? community.owner.name : 'Unknown'}
           </Text>
-          <Text style={styles.memberCount}>{community.anggota?.length || 0} Anggota</Text>
+          <Text style={styles.memberCount}>{community.anggota?.length || 0} Member</Text>
 
-          <Text style={styles.sectionTitle}>Deskripsi Komunitas:</Text>
+          <Text style={styles.sectionTitle}>Community Description:</Text>
           <Text style={styles.description}>{community.description}</Text>
 
           {community.gambar && (
             <>
-              <Text style={styles.sectionTitle}>Gambar Komunitas:</Text>
+              <Text style={styles.sectionTitle}>Community Image:</Text>
               <View style={styles.imageContainer}>
                 <Image 
                   source={{ 
@@ -257,7 +257,7 @@ const Join = () => {
               disabled={loading}
             >
               <Text style={[styles.followText, { color: isFollowing ? '#000' : '#fff' }]}>
-                {loading ? 'Memproses...' : isFollowing ? 'Leave Community' : 'Request to Join'}
+                {loading ? 'Processing...' : isFollowing ? 'Leave Community' : 'Request to Join'}
               </Text>
             </TouchableOpacity>
           )}

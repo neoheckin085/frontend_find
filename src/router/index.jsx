@@ -34,6 +34,8 @@ import ExploreScreen from '../button/Search';
 import Messages from '../button/Messages';
 import CreateCommunity from '../pages/CreateCommunity';
 import UserProfile from '../components/UserProfile';
+import CommunityInterestScreen from '../pages/CommunityInterestScreen';
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -142,7 +144,7 @@ const MainApp = ({ navigation }) => {
           name="Profil"
           component={Profil}
           options={{
-            headerTitle: 'Profil',
+            headerTitle: 'Profile',
             headerRight: () => (
               <View style={styles.headerIcons}>
                 <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
@@ -164,7 +166,7 @@ const MainApp = ({ navigation }) => {
             <TouchableWithoutFeedback>
               <View style={styles.modalTopCenter}>
                 <TouchableOpacity onPress={handleNavigateToMengikuti}>
-                  <Text style={styles.modalOption}>Mengikuti</Text>
+                  <Text style={styles.modalOption}>Following</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('Premium')}>
                   <Text style={styles.modalOption}>Premium</Text>
@@ -185,10 +187,10 @@ const MainApp = ({ navigation }) => {
                   <Text style={styles.modalOption}>Premium</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleNavigateToEditProfil}>
-                  <Text style={styles.modalOption}>Edit Profil</Text>
+                  <Text style={styles.modalOption}>Edit Profile</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleLogout}>
-                  <Text style={styles.modalLogout}>Keluar</Text>
+                  <Text style={styles.modalLogout}>Log out</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
@@ -210,7 +212,8 @@ const Router = () => {
           <Stack.Screen name="Splash" component={Splash} options={{ headerShown: false }} />
           <Stack.Screen name="MainApp" component={MainApp} options={{ headerShown: false }} />
           <Stack.Screen name="Messages" component={Messages} />
-          <Stack.Screen name="CreateCommunity" component={CreateCommunity} options={{ title: 'Buat Komunitas' }} />
+          <Stack.Screen name="CreateCommunity" component={CreateCommunity} options={{ title: 'Create a Community' }} />
+          <Stack.Screen name="CommunityInterestScreen" component={CommunityInterestScreen} options={{ title: 'Community Interests' }} />
         </>
       ) : (
         <>
@@ -219,8 +222,8 @@ const Router = () => {
         </>
       )}
       <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
-      <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Postingan yang Diikuti' }} />
-      <Stack.Screen name="EditProfil" component={EditProfil} options={{ headerTitle: 'Edit Profil' }} />
+      <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Followed Posts' }} />
+      <Stack.Screen name="EditProfil" component={EditProfil} options={{ headerTitle: 'Edit Profile' }} />
       <Stack.Screen name="SearchAccount" component={Forget} options={{ headerShown: false }} />
       <Stack.Screen name="Telepon" component={Phone} options={{ headerShown: false }} />
       <Stack.Screen name="VerifEmail" component={Verif1} options={{ headerShown: false }} />
@@ -229,16 +232,11 @@ const Router = () => {
       <Stack.Screen name="Comment" component={Komen} options={{ headerShown: false }} />
       <Stack.Screen name="Join" component={Join} options={{ headerShown: false }} />
       <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Notifikasi" component={NotificationScreen} options={{ headerTitle: 'Notifikasi' }} />
+      <Stack.Screen name="Notifikasi" component={NotificationScreen} options={{ headerTitle: 'Notification' }} />
       <Stack.Screen name="Search" component={ExploreScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
       <Stack.Screen name="KomunitasScreen" component={KomunitasScreen} options={{ headerShown: false }} />
-      <Stack.Screen 
-        name="UserProfile" 
-        component={UserProfile}
-        options={{
-          title: 'User Profile',
-          headerTitleAlign: 'center',
+      <Stack.Screen name="UserProfile" component={UserProfile} options={{  title: 'User Profile',headerTitleAlign: 'center',
         }}
       />
     </Stack.Navigator>

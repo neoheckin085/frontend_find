@@ -98,7 +98,7 @@ const Profil = () => {
 
   useEffect(() => {
     if (detailUser) {
-      console.log('User berhasil dimuat:', {
+      console.log('User successfully loaded:', {
         ...detailUser,
         platform: Platform.OS,
         isEmulator: Platform.constants.Brand === 'google',
@@ -227,14 +227,14 @@ const Profil = () => {
           {loading && !refreshing ? (
             <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
           ) : error?.message ? (
-            <Text style={{ color: 'red', textAlign: 'center' }}>Gagal memuat data: {error.message}</Text>
+            <Text style={{ color: 'red', textAlign: 'center' }}>Failed to load data: {error.message}</Text>
           ) : (
             <>
               <Text style={{ fontWeight: 'bold', fontSize: 20, textAlign: 'center', marginTop: 10 }}>
-                {detailUser?.name || 'Nama tidak tersedia'}
+                {detailUser?.name || 'Name not available'}
               </Text>
               <Text style={{ textAlign: 'center', marginTop: 5, color: '#666' }}>
-                {detailUser?.tentang || 'Tidak dapat bicara, F!ND saja'}
+                {detailUser?.tentang || 'Cant talk, just F!ND'}
               </Text>
 
               <View style={{ marginLeft: 20, marginTop: 20, width: '100%' }}>
@@ -244,7 +244,7 @@ const Profil = () => {
                     <Icon name="whatsapp" size={25} color="black" />
                   </View>
                   <View style={{ justifyContent: 'center', marginLeft: 10, flex: 1 }}>
-                    <Text style={{ fontWeight: 'bold' }}>{detailUser?.nomor_telepon || 'Nomor tidak tersedia'}</Text>
+                    <Text style={{ fontWeight: 'bold' }}>{detailUser?.nomor_telepon || 'Number not available'}</Text>
                   </View>
                 </View>
 
@@ -254,7 +254,7 @@ const Profil = () => {
                     <Icon name="map-marker" size={25} color="black" />
                   </View>
                   <View style={{ justifyContent: 'center', marginLeft: 10, flex: 1 }}>
-                    <Text style={{ fontWeight: 'bold' }}>{detailUser?.lokasi || 'Lokasi tidak tersedia'}</Text>
+                    <Text style={{ fontWeight: 'bold' }}>{detailUser?.lokasi || 'Location not available'}</Text>
                   </View>
                 </View>
 
@@ -264,7 +264,7 @@ const Profil = () => {
                     <Icon name="envelope-o" size={25} color="black" />
                   </View>
                   <View style={{ justifyContent: 'center', marginLeft: 10, flex: 1 }}>
-                    <Text style={{ fontWeight: 'bold' }}>{detailUser?.email || 'Email tidak tersedia'}</Text>
+                    <Text style={{ fontWeight: 'bold' }}>{detailUser?.email || 'Email not available'}</Text>
                   </View>
                 </View>
               </View>
