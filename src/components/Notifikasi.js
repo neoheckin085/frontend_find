@@ -1,5 +1,13 @@
-import React from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet,
+  RefreshControl 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const notifications = [
@@ -25,6 +33,16 @@ const notifications = [
 
 const NotificationScreen = () => {
   const navigation = useNavigation();
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    // Add your refresh logic here
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
 
   const renderItem = ({ item }) => (
     <View style={styles.notificationContainer}>
