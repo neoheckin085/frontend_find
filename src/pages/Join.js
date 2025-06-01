@@ -258,6 +258,7 @@ const Join = () => {
             >
               <Text style={[styles.followText, { color: isFollowing ? '#000' : '#fff' }]}>
                 {loading ? 'Processing...' : isFollowing ? 'Leave Community' : 'Request to Join'}
+
               </Text>
             </TouchableOpacity>
           )}
