@@ -13,20 +13,20 @@ import { useNavigation } from '@react-navigation/native';
 const notifications = [
   {
     id: '1',
-    title: 'Permintaan anda ditolak.',
-    description: 'Yah... permintaan anda untuk mengikuti Ikasi Kota Makassar ditolak.',
+    title: 'Your request was rejected.',
+    description: 'Well... your request to attend the Ikasi Kota Makassar was rejected.',
     image: require('../assets/IkasiMakassar.png'), 
   },
   {
     id: '1',
-    title: 'Seseorang menyukai post anda.',
-    description: '@Faviann menyukai post anda.',
+    title: 'Someone liked your post.',
+    description: '@Faviann liked your post.',
     image: require('../assets/Favian.png'),
   },
   {
     id: '3',
-    title: 'Permintaan bergabung ke grup',
-    description: '@Faviann ingin bergabung ke Komunitas anda. Tekan disini untuk meninjau',
+    title: 'Request to join group',
+    description: '@Faviann wants to join your Community. Click here to review',
     image: require('../assets/Favian.png'),
   },
 ];

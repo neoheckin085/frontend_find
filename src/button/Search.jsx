@@ -147,7 +147,7 @@ const ExploreScreen = () => {
         )}
         
         <TextInput
-          placeholder="Cari komunitas"
+          placeholder="Find a community...."
           placeholderTextColor="#888"
           style={styles.searchInput}
           value={search}
@@ -169,7 +169,7 @@ const ExploreScreen = () => {
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             ListEmptyComponent={() => (
               <Text style={{ textAlign: 'center', marginTop: 20, color: '#888' }}>
-                Tidak ditemukan.
+                Not found.
               </Text>
             )}
           />

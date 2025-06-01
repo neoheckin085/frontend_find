@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 
 const premiumPackages = [
-  { id: '1', title: '+ 1 Moon', price: 'Rp 7.000' },
-  { id: '2', title: '+ 1 Moon', price: 'Rp 7.000' },
-  { id: '3', title: '+ 1 Moon', price: 'Rp 7.000' },
-  { id: '4', title: '+ 1 Moon', price: 'Rp 7.000' },
+  { id: '1', title: '+ 1 Month', price: '$7' },
+  { id: '2', title: '+ 1 Month', price: '$7' },
+  { id: '3', title: '+ 1 Month', price: '$7' },
+  { id: '4', title: '+ 1 Month', price: '$7' },
 ];
 
 const PremiumScreen = () => {
@@ -27,11 +28,11 @@ const PremiumScreen = () => {
       {/* Custom Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Get Premium</Text>
       </View>
-       
+
       {/* Paket Premium */}
       <FlatList
         data={premiumPackages}
@@ -45,12 +46,13 @@ const PremiumScreen = () => {
       {/* Fitur Premium */}
       <View style={styles.featureContainer}>
         <View style={styles.featureHeader}>
-          <Text style={styles.featureTitle}>Fitur Premium</Text>
+          <Text style={styles.featureTitle}>Premium Features</Text>
         </View>
         <View style={styles.featureContent}>
-          <Text style={styles.featureText}>✔ Bebas Iklan</Text>
-          <Text style={styles.featureText}>✔ Akses Eksklusif</Text>
-          <Text style={styles.featureText}>✔ Prioritas Support</Text>
+        <Text style={styles.featureText}>✔ Make Community</Text>
+          <Text style={styles.featureText}>✔ Ad Free</Text>
+          <Text style={styles.featureText}>✔ Exclusive Access</Text>
+          <Text style={styles.featureText}>✔ Support Priority</Text>
         </View>
       </View>
     </View>
@@ -99,34 +101,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   header: {
-  backgroundColor: 'black',
-  paddingVertical: 20,
-  paddingHorizontal: 20,
-  borderBottomLeftRadius: 30, 
-  borderBottomRightRadius: 30,
-  alignItems: 'center',
-  position: 'relative',
-},
-headerTitle: {
-  fontSize: 22,
-  fontWeight: 'bold',
-  color: '#fff',
-},
-backButton: {
-  position: 'absolute',
-  left: 10,
-  top: '50%',
-  transform: [{ translateY: -15 }],
-  padding: 10, 
-  borderRadius: 50,
-},
-backText: {
-  fontSize: 28, 
-  color: '#fff',
-  fontWeight: 'bold',
-},
-
-
+    backgroundColor: 'black',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    padding: 10,
+    borderRadius: 50,
+  },
+  backText: {
+    fontSize: 28,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   featureContainer: {
     backgroundColor: '#c3bebe',
     borderRadius: 20,
@@ -151,7 +151,7 @@ backText: {
     textAlign: 'center',
   },
   featureContent: {
-    marginTop: 30, 
+    marginTop: 30,
     padding: 20,
     alignItems: 'center',
   },
