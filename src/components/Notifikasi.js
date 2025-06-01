@@ -44,6 +44,16 @@ const NotificationScreen = () => {
         data={notifications}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          !loading && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Tidak ada notifikasi</Text>
+            </View>
+          )
+        }
       />
     </View>
   );
