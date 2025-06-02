@@ -144,13 +144,17 @@ const MainApp = ({ navigation }) => {
           name="Profil"
           component={Profil}
           options={{
-            headerTitle: 'Profile',
-            headerRight: () => (
+            headerTitle: 'Profile',            headerRight: () => (
               <View style={styles.headerIcons}>
-                <TouchableOpacity onPress={() => navigation.navigate('Notifikasi')}>
-                  <Icon name="bell" size={24} color="#808080" style={styles.icon} />
+                <TouchableOpacity 
+                  style={styles.iconButton}
+                  onPress={() => navigation.navigate('Notifikasi')}>
+                  <Icon name="bell" size={24} color="#808080" />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={openProfileModal} ref={profileButtonRef}>
+                <TouchableOpacity 
+                  style={styles.iconButton}
+                  onPress={openProfileModal} 
+                  ref={profileButtonRef}>
                   <Icon name="ellipsis-v" size={24} color="#333" />
                 </TouchableOpacity>
               </View>
@@ -261,14 +265,17 @@ const styles = StyleSheet.create({
   },
   iconChat: {
     marginRight: 10,
-  },
-  headerIcons: {
+  },  headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 25,
+    marginRight: 15,
   },
   icon: {
-    marginRight: 35,
+    marginRight: 25,
+  },
+  iconButton: {
+    padding: 10, // Add padding for larger touch target
+    marginHorizontal: 5, // Add horizontal spacing between buttons
   },
   modalOverlay: {
     flex: 1,
