@@ -219,16 +219,16 @@ const Router = () => {
         <>
           <Stack.Screen name="Find" component={Find} options={{ headerShown: false }} />
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+          <Stack.Screen name="SearchAccount" component={Forget} options={{ headerShown: false }} />
+          <Stack.Screen name="Telepon" component={Phone} options={{ headerShown: false }} />
+          <Stack.Screen name="VerifEmail" component={Verif1} options={{ headerShown: false }} />
+          <Stack.Screen name="VerifTelepon" component={Verif2} options={{ headerShown: false }} />
+          <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false }} />
         </>
       )}
       <Stack.Screen name="Register" component={CreateAccount} options={{ headerShown: false }} />
       <Stack.Screen name="Mengikuti" component={Mengikuti} options={{ headerTitle: 'Followed Posts' }} />
       <Stack.Screen name="EditProfil" component={EditProfil} options={{ headerTitle: 'Edit Profile' }} />
-      <Stack.Screen name="SearchAccount" component={Forget} options={{ headerShown: false }} />
-      <Stack.Screen name="Telepon" component={Phone} options={{ headerShown: false }} />
-      <Stack.Screen name="VerifEmail" component={Verif1} options={{ headerShown: false }} />
-      <Stack.Screen name="VerifTelepon" component={Verif2} options={{ headerShown: false }} />
-      <Stack.Screen name="NewPassword" component={NewPassword} options={{ headerShown: false }} />
       <Stack.Screen name="Comment" component={Komen} options={{ headerShown: false }} />
       <Stack.Screen name="Join" component={Join} options={{ headerShown: false }} />
       <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false }} />

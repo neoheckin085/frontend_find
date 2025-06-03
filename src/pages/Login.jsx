@@ -28,6 +28,7 @@ const Login = ({ navigation }) => {
         setIsLoggingIn(false);
         if (loginSuccessful) {
             console.log("Login successful. Router will handle navigation to MainApp.");
+            
         } else {
             console.log("Login failed. Errors should be displayed from context's 'error' state.");
         }

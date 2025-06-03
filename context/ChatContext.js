@@ -251,13 +251,47 @@ export const ChatProvider = ({ children }) => {
       console.log('Loading messages for group:', groupId);
       const response = await Api.get(`/chat/groups/${groupId}/messages`);
       console.log('Messages loaded:', response.data);
-      
-      // Check if response.data is a valid array before setting messages
-      if (response.data && Array.isArray(response.data)) {
-        setMessages([...response.data].reverse()); // Reverse to show oldest first
+
+      console.log('Is response.data an Array?', Array.isArray(response.data));
+      console.log('Full messages response.data:', response.data); // Log the full response data
+
+      let messagesData = response.data;
+
+      // Explicitly parse if data is a string
+      if (typeof messagesData === 'string') {
+        console.log('Response data is a string. Content:', messagesData);
+        try {
+          console.log('Attempting to parse string response data as JSON...');
+          messagesData = JSON.parse(messagesData);
+          console.log('JSON parsing successful. Parsed data type:', typeof messagesData);
+          console.log('Is parsed data an Array?', Array.isArray(messagesData));
+        } catch (parseError) {
+          console.error('Failed to parse string response data as JSON:', parseError);
+          setError('Failed to load messages: Invalid data format received.');
+          setMessages([]);
+          setLoading(false);
+          return; // Stop further processing if parsing fails
+        }
+      } else {
+        // Log the data if it's not a string AND not an array (unexpected)
+        if (!Array.isArray(messagesData)) {
+            console.warn('Response data is neither a string nor an array. Data:', messagesData);
+        }
+      }
+
+      // NOW, access the 'data' property from the response object
+      const messageArray = messagesData?.data; // Use optional chaining in case messagesData is null/undefined
+
+      // Check if the extracted 'data' property is a valid array
+      if (messageArray && Array.isArray(messageArray)) {
+        console.log('Extracted message array length:', messageArray.length);
+        // Log the first few items to see their structure
+        console.log('First 3 extracted messages:', messageArray.slice(0, 3));
+
+        setMessages([...messageArray].reverse()); // Reverse to show oldest first
         console.log('Messages successfully processed and set.');
       } else {
-        console.warn('Received invalid message data format:', response.data);
+        console.warn('Received invalid message data format:', messagesData);
         setMessages([]); // Set to empty array if data is invalid
         setError('Failed to load messages: Invalid data format.');
       }
