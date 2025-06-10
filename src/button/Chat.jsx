@@ -267,7 +267,7 @@ const Messages = ({ route, navigation }) => {
       <FlatList
         ref={flatListRef}
         data={messages}
-        keyExtractor={(item) => item.message_id}
+        keyExtractor={(item) => item.message_id.toString()}
         renderItem={renderMessage}
         contentContainerStyle={styles.messagesList}
       />

@@ -1,8 +1,9 @@
 // Pusher configuration
 const PUSHER_CONFIG = {
-  APP_KEY: '94efde0a14f75f859ab5', // Replace with your actual Pusher key
+  APP_KEY: 'e64210d25c2e6158f348', // Replace with your actual Pusher key
   APP_CLUSTER: 'ap1', // Replace with your actual cluster
-  AUTH_ENDPOINT: '/broadcasting/auth' // The Laravel API prefix is added by API_CONFIG
+  APP_ID: '1985987',
+  APP_SECRET: '80010cea6af3876eadfc'
 };
 
 export default PUSHER_CONFIG; 

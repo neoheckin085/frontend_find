@@ -1,10 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js/react-native';
 import Api from '../libs/Api';
 import { useAuth } from './AuthContext';
+import { Pusher } from '@pusher/pusher-websocket-react-native';
 import API_CONFIG from '../src/config/apiConfig';
 import PUSHER_CONFIG from '../src/config/pusherConfig';
 
@@ -12,60 +11,195 @@ const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
   const { user, token } = useAuth();
-  const [echo, setEcho] = useState(null);
+  const [pusherClientInstance, setPusherClientInstance] = useState(null);
   const [chatGroups, setChatGroups] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Initialize Echo when user logs in
+  // Ref to store the currently active channel
+  const currentChannelRef = useRef(null);
+
+  // --- New onAuthorizer callback ---
+  const onAuthorizer = async (channelName, socketId) => {
+      console.log('>>> onAuthorizer triggered <<<', { channelName, socketId });
+      try {
+          const authEndpointUrl = `${API_CONFIG.BASE_URL}/api/broadcasting/auth`;
+          console.log('Calling authEndpoint manually:', authEndpointUrl);
+          
+          // Use the Api utility to make the authenticated POST request
+          const response = await Api.post(authEndpointUrl, {
+              socket_id: socketId,
+              channel_name: channelName,
+          });
+          
+          console.log('AuthEndpoint response:', response.data);
+          
+          // The response data should be in the format { auth: "...", channel_data: "..." } for presence channels
+          // The Pusher library expects an object with 'auth' and optionally 'channel_data'
+          // Ensure your backend returns the correct JSON structure.
+          if (response.data && response.data.auth) {
+              console.log('✅ Authentication successful via onAuthorizer.');
+              return response.data; // Return the authorization response from your backend
+          } else {
+              console.error('❌ Authentication failed: Invalid response format from auth endpoint.', response.data);
+              throw new Error('Invalid auth response');
+          }
+      } catch (error) {
+          console.error('❌ Authentication request failed in onAuthorizer:', error);
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data,
+            status: error.response?.status,
+          });
+          // Rethrow the error so Pusher library knows authentication failed
+          throw error;
+      }
+  };
+  // --- End onAuthorizer callback ---
+
+  // Initialize Pusher when user logs in
   useEffect(() => {
+    console.log('Pusher initialization effect triggered:', {
+      hasToken: !!token,
+      hasUser: !!user,
+      tokenLength: token?.length,
+      userId: user?.user_id
+    });
+
     if (token && user) {
-      initializeEcho();
+      console.log('Starting Pusher initialization with token and user');
+      initializePusher();
+    } else {
+      console.log('Pusher initialization skipped:', {
+        missingToken: !token,
+        missingUser: !user
+      });
     }
+
     return () => {
-      if (echo) {
-        echo.disconnect();
+      if (pusherClientInstance) {
+        console.log('Cleaning up Pusher connection');
+        pusherClientInstance.disconnect();
       }
     };
   }, [token, user]);
 
-  // Initialize Laravel Echo with Pusher
-  const initializeEcho = async () => {
+  // Initialize Pusher
+  const initializePusher = async () => {
     try {
-      // Configure Pusher for React Native
-      Pusher.logToConsole = __DEV__;
+      console.log('Starting Pusher initialization process...');
       
-      // Initialize Pusher instance first
-      const pusherClient = new Pusher(PUSHER_CONFIG.APP_KEY, {
+      // Initialize Pusher instance
+      console.log('Getting Pusher instance...');
+      const pusherClient = await Pusher.getInstance();
+      
+      console.log('Initializing Pusher with config:', {
+        apiKey: PUSHER_CONFIG.APP_KEY,
         cluster: PUSHER_CONFIG.APP_CLUSTER,
-        authEndpoint: `${API_CONFIG.BASE_URL}${PUSHER_CONFIG.AUTH_ENDPOINT}`,
-        auth: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        },
-        forceTLS: true,
-        encrypted: true,
-        enabledTransports: ['ws', 'wss'],
-        disabledTransports: ['xhr_polling', 'xhr_streaming', 'sockjs'],
+        authEndpoint: `${API_CONFIG.BASE_URL}/api/broadcasting/auth`,
+        wsHost: `ws-${PUSHER_CONFIG.APP_CLUSTER}.pusher.com`,
+        wsPort: 443,
+        wssPort: 443,
+        forceTLS: true
+      });
+
+      // Construct and log the full WebSocket URL
+      const wsProtocol = true ? 'wss' : 'ws'; // Using forceTLS value
+      const wsHost = `ws-${PUSHER_CONFIG.APP_CLUSTER}.pusher.com`;
+      const wsPort = true ? 443 : 443; // Using forceTLS value to determine port
+      const fullWebSocketUrl = `${wsProtocol}://${wsHost}:${wsPort}/app/${PUSHER_CONFIG.APP_KEY}`;
+      console.log('Attempting to connect to WebSocket URL:', fullWebSocketUrl);
+
+      // Log the authEndpoint URL
+      const authEndpointUrl = `${API_CONFIG.BASE_URL}/api/broadcasting/auth`;
+      console.log('Using authEndpoint URL:', authEndpointUrl);
+      
+      // Log the authentication headers being passed
+      const authHeaders = {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+      };
+      console.log('Authentication headers being passed to Pusher init:', authHeaders);
+
+      console.log('Attempting to connect Pusher...');
+      
+      // Connect Pusher and wait for the 'connected' state
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Pusher connection timed out'));
+        }, 15000); // 15 seconds timeout
+
+        // Define the connection state change handler
+        const connectionStateChangeHandler = (current, previous) => {
+          console.log('Pusher connection state changed:', {
+            from: previous,
+            to: current,
+            timestamp: new Date().toISOString()
+          });
+          if (current === 'CONNECTED') {
+            clearTimeout(timeout);
+            console.log('✅ Pusher connected successfully');
+            setIsConnected(true);
+            resolve();
+          } else if (current === 'DISCONNECTED' || current === 'FAILED') {
+            clearTimeout(timeout);
+            console.log('❌ Pusher connection failed or disconnected.', { state: current });
+            setIsConnected(false);
+            reject(new Error(`Pusher connection failed or disconnected with state: ${current}`));
+          }
+        };
+
+        pusherClient.init({
+          apiKey: PUSHER_CONFIG.APP_KEY,
+          cluster: PUSHER_CONFIG.APP_CLUSTER,
+          // Use onAuthorizer callback instead of authEndpoint and auth.headers
+          // authEndpoint: `${API_CONFIG.BASE_URL}/api/broadcasting/auth`,
+          // auth: {
+          //   headers: {
+          //     Authorization: `Bearer ${token}`,
+          //     Accept: 'application/json',
+          //     'Content-Type': 'application/json',
+          //   },
+          // },
+          onAuthorizer: onAuthorizer, // Pass the new onAuthorizer callback
+          onConnectionStateChange: connectionStateChangeHandler,
+          onError: (error) => {
+            console.error('Pusher connection error:', {
+              message: error.message,
+              code: error.code,
+              timestamp: new Date().toISOString()
+            });
+            clearTimeout(timeout);
+            reject(error);
+          }
+        });
+        
+        // Now actually connect after setting up listeners
+        pusherClient.connect();
       });
       
-      const newEcho = new Echo({
-        broadcaster: 'pusher',
-        client: pusherClient,
-      });
+      console.log('Setting Pusher client instance in state...');
+      setPusherClientInstance(pusherClient);
+      console.log('✅ Pusher client initialized and set in state. Current connection state:', pusherClient?.connection?.state);
       
-      setEcho(newEcho);
-      console.log('Echo initialized with Pusher in React Native');
-      
-      // Load chat groups after Echo initialization
+      // Load chat groups after Pusher initialization
+      console.log('Fetching chat groups...');
       fetchChatGroups();
       
     } catch (error) {
-      console.error('Failed to initialize Echo:', error);
+      console.error('❌ Failed to initialize Pusher client:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data,
+        name: error.name,
+        code: error.code
+      });
       setError('Failed to connect to chat server');
     }
   };
@@ -75,8 +209,11 @@ export const ChatProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      const userToken = await AsyncStorage.getItem('token')
       console.log('Fetching chat groups...');
-      const response = await Api.get('/chat/groups');
+      const response = await Api.get('/chat/groups', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       console.log('Chat groups response:', response.data);
       
       // Filter out private chats that have no messages
@@ -111,12 +248,59 @@ export const ChatProvider = ({ children }) => {
   const loadMessages = async (groupId) => {
     setLoading(true);
     try {
+      console.log('Loading messages for group:', groupId);
       const response = await Api.get(`/chat/groups/${groupId}/messages`);
-      setMessages([...response.data.data].reverse()); // Reverse agar urut lama ke baru
+      console.log('Messages loaded:', response.data);
+
+      console.log('Is response.data an Array?', Array.isArray(response.data));
+      console.log('Full messages response.data:', response.data); // Log the full response data
+
+      let messagesData = response.data;
+
+      // Explicitly parse if data is a string
+      if (typeof messagesData === 'string') {
+        console.log('Response data is a string. Content:', messagesData);
+        try {
+          console.log('Attempting to parse string response data as JSON...');
+          messagesData = JSON.parse(messagesData);
+          console.log('JSON parsing successful. Parsed data type:', typeof messagesData);
+          console.log('Is parsed data an Array?', Array.isArray(messagesData));
+        } catch (parseError) {
+          console.error('Failed to parse string response data as JSON:', parseError);
+          setError('Failed to load messages: Invalid data format received.');
+          setMessages([]);
+          setLoading(false);
+          return; // Stop further processing if parsing fails
+        }
+      } else {
+        // Log the data if it's not a string AND not an array (unexpected)
+        if (!Array.isArray(messagesData)) {
+            console.warn('Response data is neither a string nor an array. Data:', messagesData);
+        }
+      }
+
+      // NOW, access the 'data' property from the response object
+      const messageArray = messagesData?.data; // Use optional chaining in case messagesData is null/undefined
+
+      // Check if the extracted 'data' property is a valid array
+      if (messageArray && Array.isArray(messageArray)) {
+        console.log('Extracted message array length:', messageArray.length);
+        // Log the first few items to see their structure
+        console.log('First 3 extracted messages:', messageArray.slice(0, 3));
+
+        setMessages([...messageArray].reverse()); // Reverse to show oldest first
+        console.log('Messages successfully processed and set.');
+      } else {
+        console.warn('Received invalid message data format:', messagesData);
+        setMessages([]); // Set to empty array if data is invalid
+        setError('Failed to load messages: Invalid data format.');
+      }
+
       setActiveChat(groupId);
       
       // Subscribe to the presence channel for this chat group
-      subscribeToChat(groupId);
+      // Moved subscription logic to useEffect that watches activeChat and pusherClientInstance state
+      // subscribeToChat(groupId);
       
     } catch (error) {
       console.error('Failed to load messages:', error);
@@ -131,9 +315,12 @@ export const ChatProvider = ({ children }) => {
     if (!activeChat) return;
     
     try {
+      console.log('Sending message to chat:', activeChat);
       const response = await Api.post(`/chat/groups/${activeChat}/messages`, {
         message
       });
+      
+      console.log('Message sent successfully:', response.data);
       
       // Add message immediately for better UX
       setMessages(prev => {
@@ -164,49 +351,146 @@ export const ChatProvider = ({ children }) => {
   };
 
   // Subscribe to a chat group's presence channel
-  const subscribeToChat = (groupId) => {
-    if (!echo) {
-      console.error('Echo not initialized');
-      return;
+  const subscribeToChat = async (groupId) => {
+    console.log('=== Starting Chat Subscription ===');
+    console.log('Initial state:', {
+      hasPusherClient: !!pusherClientInstance,
+      groupId: groupId,
+      pusherState: pusherClientInstance?.connection?.state || 'not initialized'
+    });
+
+    if (!pusherClientInstance) {
+      console.error('❌ Pusher client not initialized - cannot subscribe to chat');
+      return null;
     }
     
+    // Add detailed pre-subscription checks
+    console.log('Pre-subscription check before calling subscribe:', {
+      pusherClientInstanceExists: !!pusherClientInstance,
+      pusherClientConnectionState: pusherClientInstance?.connection?.state,
+      tokenExists: !!token,
+      authEndpointUsed: `${API_CONFIG.BASE_URL}/api/broadcasting/auth`,
+      groupId: groupId,
+      channelNameAttempt: `presence-chat.group.${groupId}`
+    });
+
+    console.log('Pusher client is in CONNECTED state (indicated by isConnected state). Proceeding with subscription.');
+    
     try {
-      // Join the presence channel
-      const channel = echo.join(`chat.group.${groupId}`);
+      console.log('Preparing to subscribe to chat group:', groupId);
       
-      // Listen for new messages
-      channel.listen('.App\\Events\\NewMessage', (e) => {
-        console.log('New message received:', e);
-        setMessages(prev => {
-          // Check if message already exists
-          if (prev.some(msg => msg.message_id === e.message.message_id)) {
-            return prev;
+      // Use the Pusher client to subscribe to the presence channel
+      const channelName = `presence-chat.group.${groupId}`;
+      console.log('Channel details for subscribe call:', {
+        name: channelName,
+        type: 'presence',
+        groupId: groupId
+      });
+      
+      console.log('Attempting to subscribe with parameters:', {
+        channelName: channelName,
+        // Note: onEvent, onSubscriptionSucceeded, onSubscriptionError callbacks are also implicitly passed.
+      });
+      
+      // Subscribe using the documented pattern
+      const channel = await pusherClientInstance.subscribe({
+        channelName: channelName,
+        onEvent: (event) => {
+          console.log('>>> Raw Channel Event Data <<<', event); // Log all events
+          console.log('=== Channel Event Received ===');
+          console.log('Event Details:', {
+            eventName: event.eventName,
+            channelName: event.channelName,
+            data: event.data,
+            timestamp: new Date().toISOString()
+          });
+
+          if (event.eventName === 'App\\Events\\NewMessage') {
+            console.log('New message event received');
+            try {
+              const data = JSON.parse(event.data);
+              console.log('Parsed raw message data from event:', data);
+              
+              // Extract the nested message object from the parsed data
+              const messageData = data?.message; 
+              
+              if (messageData && messageData.message_id) { // Ensure it looks like a message object
+                console.log('Processing message data for state update:', {
+                  message_id: messageData.message_id,
+                  message: messageData.message,
+                  userId: messageData.user_id,
+                  groupId: messageData.chat_group_id,
+                  hasUserObject: !!messageData.user // Check if user object exists
+                });
+                
+                setMessages(prev => {
+                  if (prev.some(msg => msg.message_id === messageData.message_id)) {
+                    console.log('Message already exists, not adding duplicate');
+                    return prev;
+                  }
+                  console.log('Adding new message object to state:', { message_id: messageData.message_id });
+                  // Add the extracted messageData object to the state
+                  return [...prev, messageData];
+                });
+              } else {
+                console.warn('No valid message data found in event or data format is unexpected.', messageData);
+              }
+            } catch (error) {
+              console.error('Error processing message event:', error);
+              console.error('Raw event data:', event.data);
+            }
           }
-          return [...prev, e.message];
-        });
+        },
+        onSubscriptionSucceeded: (data) => {
+          console.log('=== Subscription Succeeded ===');
+          console.log('Channel:', channelName);
+          console.log('Data:', data);
+          console.log('Timestamp:', new Date().toISOString());
+          console.log('Pusher client state on subscription success:', pusherClientInstance?.connection?.state);
+        },
+        onSubscriptionError: (error) => {
+          console.error('=== Subscription Error ===');
+          console.error('Channel:', channelName);
+          console.error('Error:', error);
+          console.error('Timestamp:', new Date().toISOString());
+        }
       });
       
-      // Handle user joining
-      channel.here((users) => {
-        console.log('Users in the chat:', users);
+      console.log('Channel subscription initiated:', {
+        channelName: channelName,
+        hasChannel: !!channel
       });
       
-      // Handle user joining after you
-      channel.joining((user) => {
-        console.log('User joined:', user);
-      });
-      
-      // Handle user leaving
-      channel.leaving((user) => {
-        console.log('User left:', user);
-      });
-      
+      // Store the channel instance in the ref
+      currentChannelRef.current = channel;
+
+      console.log('✅ Channel subscription process completed.', channelName);
       return channel;
     } catch (error) {
-      console.error('Failed to subscribe to chat:', error);
+      console.error('❌ Failed to subscribe to chat:', error);
+      console.error('Subscription error details:', {
+        error: error.message,
+        stack: error.stack,
+        groupId: groupId,
+        attemptedChannel: `presence-chat.group.${groupId}`,
+        pusherState: pusherClientInstance?.connection?.state || 'unknown'
+      });
       setError('Failed to connect to chat channel');
       return null;
     }
+  };
+
+  // Function to unsubscribe from a channel (optional, but good practice)
+  const unsubscribeFromChat = (groupId) => {
+    if (!pusherClientInstance) {
+      console.error('❌ Pusher client not initialized - cannot unsubscribe');
+      return;
+    }
+
+    const channelName = `presence-chat.group.${groupId}`;
+    console.log('Attempting to unsubscribe from channel:', channelName);
+    pusherClientInstance.unsubscribe(channelName);
+    console.log('✅ Unsubscribed from channel:', channelName);
   };
 
   // Create a new chat group or get existing private chat
@@ -267,8 +551,9 @@ export const ChatProvider = ({ children }) => {
     try {
       await Api.delete(`/chat/groups/${groupId}/users`);
       
-      // Remove the group from the local state
+      // Remove the group from the local state and unsubscribe
       setChatGroups(prev => prev.filter(group => group.chat_group_id !== groupId));
+      unsubscribeFromChat(groupId);
       
       // If this was the active chat, clear it
       if (activeChat === groupId) {
@@ -283,6 +568,47 @@ export const ChatProvider = ({ children }) => {
       return false;
     }
   };
+
+  // Effect to subscribe/unsubscribe when active chat changes OR Pusher is connected
+  useEffect(() => {
+    console.log('>>> useEffect [activeChat, isConnected] triggered <<<');
+    console.log('Active chat or Pusher isConnected state changed.', {
+      activeChat: activeChat,
+      isConnected: isConnected
+    });
+    
+    // Unsubscribe from the previous channel if it exists and Pusher instance is available
+    if (currentChannelRef.current && pusherClientInstance) {
+        console.log('Unsubscribing from previous channel:', currentChannelRef.current.name);
+        // Use optional chaining as connection might be undefined during cleanup
+        // Unsubscribe logic can proceed regardless of connection state during cleanup
+        pusherClientInstance.unsubscribe(currentChannelRef.current.name);
+        currentChannelRef.current = null; // Clear the ref after unsubscribing
+    }
+
+    // Subscribe to the new chat channel if activeChat is set and Pusher is connected
+    if (activeChat && isConnected && pusherClientInstance) { // Added pusherClientInstance check for safety
+      console.log('--- Conditions met for subscription. Calling subscribeToChat ---');
+      console.log('Active chat set and Pusher is CONNECTED, subscribing...', activeChat);
+      subscribeToChat(activeChat);
+      
+    } else if (activeChat && !isConnected) {
+       console.warn('Active chat set, but Pusher is not CONNECTED. Subscription will be attempted when connected.');
+    } else if (activeChat && isConnected && !pusherClientInstance) {
+       console.warn('Active chat set and isConnected is true, but Pusher client instance is missing.');
+    }
+
+    return () => {
+      // Cleanup function: Unsubscribe when component unmounts or dependencies change
+      if (currentChannelRef.current && pusherClientInstance) {
+         console.log('Cleanup: Unsubscribing from channel on unmount or dependency change:', currentChannelRef.current.name);
+         // Unsubscribe logic can proceed regardless of connection state during cleanup
+         pusherClientInstance.unsubscribe(currentChannelRef.current.name);
+         currentChannelRef.current = null; // Clear the ref on unmount
+      }
+    };
+    // Depend on active chat and isConnected state
+  }, [activeChat, isConnected, pusherClientInstance]); 
 
   return (
     <ChatContext.Provider value={{

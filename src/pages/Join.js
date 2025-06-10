@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import GoogleMapsScreen from '../button/Maps';
+import OpenStreetMapScreen from '../button/Maps';
 import Api from '../../libs/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_CONFIG from '../../src/config/apiConfig';
@@ -31,12 +31,27 @@ const Join = () => {
   const [showRequestsModal, setShowRequestsModal] = useState(false);
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    // If it's already a full URL, return it
-    if (imagePath.startsWith('http')) return imagePath;
-    // Add storage/ prefix if not present
-    const storagePath = imagePath.startsWith('storage/') ? imagePath : `storage/${imagePath}`;
-    return API_CONFIG.getStorageUrl(storagePath);
+    if (!imagePath) {
+      console.log('No image path provided');
+      return null;
+    }
+
+    try {
+      // If it's already a full URL, return it
+      if (imagePath.startsWith('http')) {
+        console.log('Using full URL:', imagePath);
+        return imagePath;
+      }
+
+      // Remove any leading slashes and 'storage/' prefix
+      const cleanPath = imagePath.replace(/^\/+/, '').replace(/^storage\//, '');
+      const fullUrl = `${API_CONFIG.API_URL.replace('/api', '')}/storage/${cleanPath}`;
+      console.log('Constructed image URL:', fullUrl);
+      return fullUrl;
+    } catch (error) {
+      console.error('Error constructing image URL:', error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -50,7 +65,15 @@ const Join = () => {
       console.log('Community details:', response.data);
       console.log('Community image path:', response.data.gambar);
       console.log('Full image URL:', getImageUrl(response.data.gambar));
-      setCommunity(response.data);
+      
+      // Fetch owner details
+      const ownerResponse = await Api.get(`/tampilkan/${response.data.owner_id}`);
+      const communityWithOwner = {
+        ...response.data,
+        owner: ownerResponse.data
+      };
+      
+      setCommunity(communityWithOwner);
       
       // Check if current user is the owner
       const userToken = await AsyncStorage.getItem('token');
@@ -75,6 +98,7 @@ const Join = () => {
       setIsFollowing(response.data.anggota?.includes(userId) || false);
     } catch (error) {
       console.error('Error checking membership status:', error);
+      console.log(userToken);
     }
   };
 
@@ -192,26 +216,30 @@ const Join = () => {
       <ScrollView>
         <View style={styles.header}>
           <View style={styles.mapContainer}>
-            <GoogleMapsScreen
-              latitude={community.latitude}
-              longitude={community.longitude}
-              name={community.name}
-            />
+            <OpenStreetMapScreen />
           </View>
           <Image
             source={
               community.gambar
-                ? { uri: getImageUrl(community.gambar) }
+                ? { 
+                    uri: getImageUrl(community.gambar),
+                    cache: 'reload'
+                  }
                 : require('../assets/Find.png')
             }
             style={styles.communityLogo}
+            onError={(error) => {
+              console.error('Community logo loading error:', error.nativeEvent);
+              console.log('Failed image path:', community.gambar);
+              console.log('Constructed URL:', getImageUrl(community.gambar));
+            }}
           />
         </View>
 
         <View style={styles.infoContainer}>
           <Text style={styles.title}>{community.name}</Text>
           <Text style={styles.subtitle}>
-            By: {community.owner ? community.owner.name : 'Unknown'}
+            By: {community.owner?.name || 'Unknown'}
           </Text>
           <Text style={styles.memberCount}>{community.anggota?.length || 0} Member</Text>
 
