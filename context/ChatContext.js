@@ -206,7 +206,10 @@ export const ChatProvider = ({ children }) => {
       messageId: messageData.message_id,
       chatGroupId: messageData.chat_group_id,
       activeChat: activeChat,
-      isActiveChat: messageData.chat_group_id === activeChat
+      isActiveChat: messageData.chat_group_id === activeChat,
+      senderId: messageData.user?.user_id,
+      currentUserId: user?.user_id,
+      isOwnMessage: messageData.user?.user_id === user?.user_id
     });
 
     // Update messages list if we're in the active chat
@@ -233,19 +236,26 @@ export const ChatProvider = ({ children }) => {
       });
     } else {
       // Update chat groups with new message and increment unread count
+      // Only increment unread count if the message is not from the current user
       setChatGroups(prev => {
         const updatedGroups = prev.map(group => {
           if (group.chat_group_id === messageData.chat_group_id) {
             const currentUnreadCount = group.unread_count || 0;
-            console.log('Updating unread count for group:', {
+            const isOwnMessage = messageData.user?.user_id === user?.user_id;
+            
+            console.log('Updating chat group:', {
               groupId: group.chat_group_id,
               currentCount: currentUnreadCount,
-              newCount: currentUnreadCount + 1
+              isOwnMessage,
+              senderId: messageData.user?.user_id,
+              currentUserId: user?.user_id
             });
+
             return {
               ...group,
               messages: [messageData],
-              unread_count: currentUnreadCount + 1
+              // Only increment unread count if it's not our own message
+              unread_count: isOwnMessage ? currentUnreadCount : currentUnreadCount + 1
             };
           }
           return group;
