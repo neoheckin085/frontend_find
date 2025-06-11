@@ -83,53 +83,13 @@ export const ChatProvider = ({ children }) => {
   };
   // --- End onAuthorizer callback ---
 
-  // Initialize Pusher when user logs in
-  useEffect(() => {
-    console.log('Pusher initialization effect triggered:', {
-      hasToken: !!token,
-      hasUser: !!user,
-      tokenLength: token?.length,
-      userId: user?.user_id
-    });
-
-    if (token && user) {
-      console.log('Starting Pusher initialization with token and user');
-      initializePusher();
-    } else {
-      console.log('Pusher initialization skipped:', {
-        missingToken: !token,
-        missingUser: !user
-      });
-    }
-
-    return () => {
-      if (pusherClientInstance) {
-        console.log('Cleaning up Pusher connection');
-        pusherClientInstance.disconnect();
-      }
-    };
-  }, [token, user]);
-
   // Initialize Pusher
   const initializePusher = async () => {
     try {
-      console.log('Starting Pusher initialization process...', {
-        hasToken: !!token,
-        tokenLength: token?.length,
-        hasUser: !!user,
-        userId: user?.user_id,
-        pusherConfig: {
-          key: PUSHER_CONFIG.APP_KEY,
-          cluster: PUSHER_CONFIG.APP_CLUSTER,
-          appId: PUSHER_CONFIG.APP_ID
-        }
-      });
+      console.log('Starting Pusher initialization process...');
       
-      // Initialize Pusher instance
-      console.log('Getting Pusher instance...');
       const pusherClient = await Pusher.getInstance();
       
-      // Log the full Pusher configuration
       const pusherConfig = {
         apiKey: PUSHER_CONFIG.APP_KEY,
         cluster: PUSHER_CONFIG.APP_CLUSTER,
@@ -144,137 +104,155 @@ export const ChatProvider = ({ children }) => {
         maxReconnectionAttempts: 6,
         maxReconnectGap: 10000
       };
-      
-      console.log('Initializing Pusher with full config:', pusherConfig);
 
-      // Construct and log the full WebSocket URL
-      const wsProtocol = 'wss';
-      const wsHost = `ws-${PUSHER_CONFIG.APP_CLUSTER}.pusher.com`;
-      const wsPort = 443;
-      const fullWebSocketUrl = `${wsProtocol}://${wsHost}:${wsPort}/app/${PUSHER_CONFIG.APP_KEY}`;
-      console.log('Attempting to connect to WebSocket URL:', fullWebSocketUrl);
-
-      // Log the authEndpoint URL and token
-      const authEndpointUrl = `${API_CONFIG.BASE_URL}/api/broadcasting/auth`;
-      console.log('Auth configuration:', {
-        authEndpointUrl,
-        hasToken: !!token,
-        tokenLength: token?.length,
-        tokenPrefix: token?.substring(0, 10) + '...' // Log first 10 chars of token
-      });
-
-      console.log('Attempting to connect Pusher...');
-      
-      // Connect Pusher and wait for the 'connected' state
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          console.error('Pusher connection timed out after 15 seconds');
-          reject(new Error('Pusher connection timed out'));
-        }, 15000);
-
-        // Define the connection state change handler
-        const connectionStateChangeHandler = (current, previous) => {
-          console.log('Pusher connection state changed:', {
-            from: previous,
-            to: current,
-            timestamp: new Date().toISOString(),
-            connectionState: pusherClient?.connection?.state,
-            socketId: pusherClient?.connection?.socket_id
-          });
-          
+      await pusherClient.init({
+        ...pusherConfig,
+        onAuthorizer: async (channelName, socketId) => {
+          try {
+            const result = await onAuthorizer(channelName, socketId);
+            return result;
+          } catch (error) {
+            console.error('Pusher authorizer error:', error);
+            throw error;
+          }
+        },
+        onConnectionStateChange: (current, previous) => {
+          console.log('Pusher connection state changed:', { from: previous, to: current });
           if (current === 'CONNECTED') {
-            clearTimeout(timeout);
-            console.log('✅ Pusher connected successfully', {
-              socketId: pusherClient?.connection?.socket_id,
-              connectionState: pusherClient?.connection?.state
-            });
             setIsConnected(true);
-            resolve();
-          } else if (current === 'DISCONNECTED' || current === 'FAILED') {
-            clearTimeout(timeout);
-            console.error('❌ Pusher connection failed or disconnected.', { 
-              state: current,
-              previousState: previous,
-              connectionState: pusherClient?.connection?.state,
-              socketId: pusherClient?.connection?.socket_id,
-              error: pusherClient?.connection?.error
-            });
-            setIsConnected(false);
-            reject(new Error(`Pusher connection failed or disconnected with state: ${current}`));
-          }
-        };
-
-        pusherClient.init({
-          ...pusherConfig,
-          onAuthorizer: async (channelName, socketId) => {
-            console.log('Pusher authorizer called:', {
-              channelName,
-              socketId,
-              hasToken: !!token,
-              tokenLength: token?.length
-            });
-            try {
-              const result = await onAuthorizer(channelName, socketId);
-              console.log('Pusher authorizer result:', {
-                success: !!result,
-                hasAuth: !!result?.auth,
-                hasChannelData: !!result?.channel_data
-              });
-              return result;
-            } catch (error) {
-              console.error('Pusher authorizer error:', {
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data
-              });
-              throw error;
+            // Resubscribe to all chat groups when reconnected
+            if (chatGroups.length > 0) {
+              subscribeToAllChatGroups();
             }
-          },
-          onConnectionStateChange: connectionStateChangeHandler,
-          onError: (error) => {
-            console.error('Pusher connection error:', {
-              message: error?.message,
-              code: error?.code,
-              type: error?.type,
-              data: error?.data,
-              timestamp: new Date().toISOString(),
-              connectionState: pusherClient?.connection?.state,
-              socketId: pusherClient?.connection?.socket_id
-            });
-            clearTimeout(timeout);
-            reject(error);
+          } else if (current === 'DISCONNECTED' || current === 'FAILED') {
+            setIsConnected(false);
           }
-        });
-        
-        // Now actually connect after setting up listeners
-        console.log('Calling pusherClient.connect()...');
-        pusherClient.connect();
+        },
+        onError: (error) => {
+          console.error('Pusher connection error:', error);
+        }
       });
-      
-      console.log('Setting Pusher client instance in state...', {
-        hasClient: !!pusherClient,
-        connectionState: pusherClient?.connection?.state,
-        socketId: pusherClient?.connection?.socket_id
-      });
+
+      await pusherClient.connect();
       setPusherClientInstance(pusherClient);
       
-      // Load chat groups after Pusher initialization
-      console.log('Fetching chat groups...');
-      fetchChatGroups();
+      // Subscribe to all chat groups after initialization
+      if (chatGroups.length > 0) {
+        subscribeToAllChatGroups();
+      }
       
     } catch (error) {
-      console.error('❌ Failed to initialize Pusher client:', {
-        message: error?.message,
-        code: error?.code,
-        type: error?.type,
-        data: error?.data,
-        stack: error?.stack,
-        response: error?.response?.data,
-        name: error?.name,
-        connectionState: pusherClientInstance?.connection?.state,
-        socketId: pusherClientInstance?.connection?.socket_id
-      });
+      console.error('Failed to initialize Pusher:', error);
       setError('Failed to connect to chat server');
+    }
+  };
+
+  // Function to subscribe to all chat groups
+  const subscribeToAllChatGroups = async () => {
+    if (!pusherClientInstance || !isConnected) {
+      console.warn('Cannot subscribe: Pusher not connected');
+      return;
+    }
+
+    try {
+      console.log('Subscribing to all chat groups...');
+      chatGroups.forEach(async (group) => {
+        const channelName = `presence-chat.group.${group.chat_group_id}`;
+        
+        // Skip if already subscribed
+        if (currentChannelRef.current?.name === channelName) {
+          return;
+        }
+
+        console.log('Subscribing to channel:', channelName);
+        const channel = await pusherClientInstance.subscribe({
+          channelName,
+          onEvent: (event) => {
+            if (event.eventName === 'App\\Events\\NewMessage') {
+              console.log('New message event received for group:', group.chat_group_id);
+              try {
+                const data = JSON.parse(event.data);
+                console.log('Parsed message data:', data);
+                
+                // Update messages and unread count immediately
+                if (data.message) {
+                  handleNewMessage(data.message);
+                }
+              } catch (error) {
+                console.error('Error processing message event:', error);
+              }
+            }
+          },
+        });
+
+        // Store channel reference for active chat
+        if (group.chat_group_id === activeChat) {
+          currentChannelRef.current = channel;
+        }
+      });
+    } catch (error) {
+      console.error('Failed to subscribe to chat groups:', error);
+    }
+  };
+
+  // Update chat groups when new message is received
+  const handleNewMessage = (messageData) => {
+    if (!messageData || !messageData.message_id) {
+      console.warn('Invalid message data received:', messageData);
+      return;
+    }
+
+    console.log('Handling new message:', {
+      messageId: messageData.message_id,
+      chatGroupId: messageData.chat_group_id,
+      activeChat: activeChat,
+      isActiveChat: messageData.chat_group_id === activeChat
+    });
+
+    // Update messages list if we're in the active chat
+    if (messageData.chat_group_id === activeChat) {
+      setMessages(prev => {
+        if (prev.some(msg => msg.message_id === messageData.message_id)) {
+          return prev;
+        }
+        return [...prev, messageData];
+      });
+
+      // Reset unread count for active chat
+      setChatGroups(prev => {
+        return prev.map(group => {
+          if (group.chat_group_id === messageData.chat_group_id) {
+            return {
+              ...group,
+              messages: [messageData],
+              unread_count: 0
+            };
+          }
+          return group;
+        });
+      });
+    } else {
+      // Update chat groups with new message and increment unread count
+      setChatGroups(prev => {
+        const updatedGroups = prev.map(group => {
+          if (group.chat_group_id === messageData.chat_group_id) {
+            const currentUnreadCount = group.unread_count || 0;
+            console.log('Updating unread count for group:', {
+              groupId: group.chat_group_id,
+              currentCount: currentUnreadCount,
+              newCount: currentUnreadCount + 1
+            });
+            return {
+              ...group,
+              messages: [messageData],
+              unread_count: currentUnreadCount + 1
+            };
+          }
+          return group;
+        });
+        console.log('Updated chat groups:', updatedGroups);
+        return updatedGroups;
+      });
     }
   };
 
@@ -298,6 +276,32 @@ export const ChatProvider = ({ children }) => {
       });
       
       setChatGroups(filteredGroups);
+
+      // Subscribe to all chat groups for real-time updates
+      if (pusherClientInstance && isConnected) {
+        console.log('Subscribing to all chat groups for real-time updates');
+        filteredGroups.forEach(group => {
+          if (group.chat_group_id !== activeChat) { // Don't resubscribe to active chat
+            const channelName = `presence-chat.group.${group.chat_group_id}`;
+            console.log('Subscribing to channel:', channelName);
+            pusherClientInstance.subscribe({
+              channelName,
+              onEvent: (event) => {
+                if (event.eventName === 'App\\Events\\NewMessage') {
+                  console.log('New message event received for group:', group.chat_group_id);
+                  try {
+                    const data = JSON.parse(event.data);
+                    console.log('Parsed message data:', data);
+                    handleNewMessage(data.message);
+                  } catch (error) {
+                    console.error('Error processing message event:', error);
+                  }
+                }
+              },
+            });
+          }
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch chat groups:', error);
       
@@ -315,43 +319,6 @@ export const ChatProvider = ({ children }) => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Update chat groups when new message is received
-  const handleNewMessage = (messageData) => {
-    if (messageData && messageData.message_id) {
-      // Update messages list if we're in the active chat
-      if (messageData.chat_group_id === activeChat) {
-        setMessages(prev => {
-          if (prev.some(msg => msg.message_id === messageData.message_id)) {
-            return prev;
-          }
-          return [...prev, messageData];
-        });
-      }
-
-      // Update chat groups list with new message and increment unread count
-      setChatGroups(prev => {
-        return prev.map(group => {
-          if (group.chat_group_id === messageData.chat_group_id) {
-            // If this is the active chat, don't increment unread count
-            if (group.chat_group_id === activeChat) {
-              return {
-                ...group,
-                messages: [messageData]
-              };
-            }
-            // Otherwise increment unread count
-            return {
-              ...group,
-              messages: [messageData],
-              unread_count: (group.unread_count || 0) + 1
-            };
-          }
-          return group;
-        });
-      });
     }
   };
 
@@ -644,46 +611,32 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Effect to subscribe/unsubscribe when active chat changes OR Pusher is connected
+  // Effect to handle Pusher initialization and chat group subscriptions
   useEffect(() => {
-    console.log('>>> useEffect [activeChat, isConnected] triggered <<<');
-    console.log('Active chat or Pusher isConnected state changed.', {
-      activeChat: activeChat,
-      isConnected: isConnected
-    });
-    
-    // Unsubscribe from the previous channel if it exists and Pusher instance is available
-    if (currentChannelRef.current && pusherClientInstance) {
-        console.log('Unsubscribing from previous channel:', currentChannelRef.current.name);
-        // Use optional chaining as connection might be undefined during cleanup
-        // Unsubscribe logic can proceed regardless of connection state during cleanup
-        pusherClientInstance.unsubscribe(currentChannelRef.current.name);
-        currentChannelRef.current = null; // Clear the ref after unsubscribing
-    }
-
-    // Subscribe to the new chat channel if activeChat is set and Pusher is connected
-    if (activeChat && isConnected && pusherClientInstance) { // Added pusherClientInstance check for safety
-      console.log('--- Conditions met for subscription. Calling subscribeToChat ---');
-      console.log('Active chat set and Pusher is CONNECTED, subscribing...', activeChat);
-      subscribeToChat(activeChat);
-      
-    } else if (activeChat && !isConnected) {
-       console.warn('Active chat set, but Pusher is not CONNECTED. Subscription will be attempted when connected.');
-    } else if (activeChat && isConnected && !pusherClientInstance) {
-       console.warn('Active chat set and isConnected is true, but Pusher client instance is missing.');
+    if (token && user) {
+      initializePusher();
     }
 
     return () => {
-      // Cleanup function: Unsubscribe when component unmounts or dependencies change
-      if (currentChannelRef.current && pusherClientInstance) {
-         console.log('Cleanup: Unsubscribing from channel on unmount or dependency change:', currentChannelRef.current.name);
-         // Unsubscribe logic can proceed regardless of connection state during cleanup
-         pusherClientInstance.unsubscribe(currentChannelRef.current.name);
-         currentChannelRef.current = null; // Clear the ref on unmount
+      if (pusherClientInstance) {
+        pusherClientInstance.disconnect();
       }
     };
-    // Depend on active chat and isConnected state
-  }, [activeChat, isConnected, pusherClientInstance]); 
+  }, [token, user]);
+
+  // Effect to handle chat group updates
+  useEffect(() => {
+    if (isConnected && pusherClientInstance && chatGroups.length > 0) {
+      subscribeToAllChatGroups();
+    }
+  }, [isConnected, chatGroups]);
+
+  // Effect to handle active chat changes
+  useEffect(() => {
+    if (activeChat && isConnected && pusherClientInstance) {
+      subscribeToAllChatGroups();
+    }
+  }, [activeChat, isConnected]);
 
   return (
     <ChatContext.Provider value={{
