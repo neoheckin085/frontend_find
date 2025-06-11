@@ -24,38 +24,60 @@ export const ChatProvider = ({ children }) => {
 
   // --- New onAuthorizer callback ---
   const onAuthorizer = async (channelName, socketId) => {
-      console.log('>>> onAuthorizer triggered <<<', { channelName, socketId });
+      console.log('>>> onAuthorizer triggered <<<', { 
+          channelName, 
+          socketId,
+          token: token ? 'present' : 'missing',
+          tokenLength: token?.length,
+          apiBaseUrl: API_CONFIG.BASE_URL
+      });
       try {
           const authEndpointUrl = `${API_CONFIG.BASE_URL}/api/broadcasting/auth`;
           console.log('Calling authEndpoint manually:', authEndpointUrl);
           
-          // Use the Api utility to make the authenticated POST request
-          const response = await Api.post(authEndpointUrl, {
+          // Log the request payload
+          const requestPayload = {
               socket_id: socketId,
               channel_name: channelName,
+          };
+          console.log('Auth request payload:', requestPayload);
+          
+          // Use the Api utility to make the authenticated POST request
+          const response = await Api.post(authEndpointUrl, requestPayload);
+          
+          console.log('AuthEndpoint response:', {
+              status: response.status,
+              statusText: response.statusText,
+              data: response.data,
+              headers: response.headers
           });
           
-          console.log('AuthEndpoint response:', response.data);
-          
           // The response data should be in the format { auth: "...", channel_data: "..." } for presence channels
-          // The Pusher library expects an object with 'auth' and optionally 'channel_data'
-          // Ensure your backend returns the correct JSON structure.
           if (response.data && response.data.auth) {
               console.log('✅ Authentication successful via onAuthorizer.');
-              return response.data; // Return the authorization response from your backend
+              return response.data;
           } else {
-              console.error('❌ Authentication failed: Invalid response format from auth endpoint.', response.data);
+              console.error('❌ Authentication failed: Invalid response format from auth endpoint.', {
+                  hasAuth: !!response.data?.auth,
+                  hasChannelData: !!response.data?.channel_data,
+                  responseData: response.data
+              });
               throw new Error('Invalid auth response');
           }
       } catch (error) {
-          console.error('❌ Authentication request failed in onAuthorizer:', error);
-          console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            response: error.response?.data,
-            status: error.response?.status,
+          console.error('❌ Authentication request failed in onAuthorizer:', {
+              message: error.message,
+              stack: error.stack,
+              response: error.response?.data,
+              status: error.response?.status,
+              statusText: error.response?.statusText,
+              headers: error.response?.headers,
+              config: {
+                  url: error.config?.url,
+                  method: error.config?.method,
+                  headers: error.config?.headers
+              }
           });
-          // Rethrow the error so Pusher library knows authentication failed
           throw error;
       }
   };
@@ -91,88 +113,133 @@ export const ChatProvider = ({ children }) => {
   // Initialize Pusher
   const initializePusher = async () => {
     try {
-      console.log('Starting Pusher initialization process...');
+      console.log('Starting Pusher initialization process...', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        hasUser: !!user,
+        userId: user?.user_id,
+        pusherConfig: {
+          key: PUSHER_CONFIG.APP_KEY,
+          cluster: PUSHER_CONFIG.APP_CLUSTER,
+          appId: PUSHER_CONFIG.APP_ID
+        }
+      });
       
       // Initialize Pusher instance
       console.log('Getting Pusher instance...');
       const pusherClient = await Pusher.getInstance();
       
-      console.log('Initializing Pusher with config:', {
+      // Log the full Pusher configuration
+      const pusherConfig = {
         apiKey: PUSHER_CONFIG.APP_KEY,
         cluster: PUSHER_CONFIG.APP_CLUSTER,
-        authEndpoint: `${API_CONFIG.BASE_URL}/api/broadcasting/auth`,
         wsHost: `ws-${PUSHER_CONFIG.APP_CLUSTER}.pusher.com`,
         wsPort: 443,
         wssPort: 443,
-        forceTLS: true
-      });
+        forceTLS: true,
+        enabledTransports: ['ws', 'wss'],
+        disabledTransports: [],
+        activityTimeout: 30000,
+        pongTimeout: 5000,
+        maxReconnectionAttempts: 6,
+        maxReconnectGap: 10000
+      };
+      
+      console.log('Initializing Pusher with full config:', pusherConfig);
 
       // Construct and log the full WebSocket URL
-      const wsProtocol = true ? 'wss' : 'ws'; // Using forceTLS value
+      const wsProtocol = 'wss';
       const wsHost = `ws-${PUSHER_CONFIG.APP_CLUSTER}.pusher.com`;
-      const wsPort = true ? 443 : 443; // Using forceTLS value to determine port
+      const wsPort = 443;
       const fullWebSocketUrl = `${wsProtocol}://${wsHost}:${wsPort}/app/${PUSHER_CONFIG.APP_KEY}`;
       console.log('Attempting to connect to WebSocket URL:', fullWebSocketUrl);
 
-      // Log the authEndpoint URL
+      // Log the authEndpoint URL and token
       const authEndpointUrl = `${API_CONFIG.BASE_URL}/api/broadcasting/auth`;
-      console.log('Using authEndpoint URL:', authEndpointUrl);
-      
-      // Log the authentication headers being passed
-      const authHeaders = {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-      };
-      console.log('Authentication headers being passed to Pusher init:', authHeaders);
+      console.log('Auth configuration:', {
+        authEndpointUrl,
+        hasToken: !!token,
+        tokenLength: token?.length,
+        tokenPrefix: token?.substring(0, 10) + '...' // Log first 10 chars of token
+      });
 
       console.log('Attempting to connect Pusher...');
       
       // Connect Pusher and wait for the 'connected' state
       await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
+          console.error('Pusher connection timed out after 15 seconds');
           reject(new Error('Pusher connection timed out'));
-        }, 15000); // 15 seconds timeout
+        }, 15000);
 
         // Define the connection state change handler
         const connectionStateChangeHandler = (current, previous) => {
           console.log('Pusher connection state changed:', {
             from: previous,
             to: current,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            connectionState: pusherClient?.connection?.state,
+            socketId: pusherClient?.connection?.socket_id
           });
+          
           if (current === 'CONNECTED') {
             clearTimeout(timeout);
-            console.log('✅ Pusher connected successfully');
+            console.log('✅ Pusher connected successfully', {
+              socketId: pusherClient?.connection?.socket_id,
+              connectionState: pusherClient?.connection?.state
+            });
             setIsConnected(true);
             resolve();
           } else if (current === 'DISCONNECTED' || current === 'FAILED') {
             clearTimeout(timeout);
-            console.log('❌ Pusher connection failed or disconnected.', { state: current });
+            console.error('❌ Pusher connection failed or disconnected.', { 
+              state: current,
+              previousState: previous,
+              connectionState: pusherClient?.connection?.state,
+              socketId: pusherClient?.connection?.socket_id,
+              error: pusherClient?.connection?.error
+            });
             setIsConnected(false);
             reject(new Error(`Pusher connection failed or disconnected with state: ${current}`));
           }
         };
 
         pusherClient.init({
-          apiKey: PUSHER_CONFIG.APP_KEY,
-          cluster: PUSHER_CONFIG.APP_CLUSTER,
-          // Use onAuthorizer callback instead of authEndpoint and auth.headers
-          // authEndpoint: `${API_CONFIG.BASE_URL}/api/broadcasting/auth`,
-          // auth: {
-          //   headers: {
-          //     Authorization: `Bearer ${token}`,
-          //     Accept: 'application/json',
-          //     'Content-Type': 'application/json',
-          //   },
-          // },
-          onAuthorizer: onAuthorizer, // Pass the new onAuthorizer callback
+          ...pusherConfig,
+          onAuthorizer: async (channelName, socketId) => {
+            console.log('Pusher authorizer called:', {
+              channelName,
+              socketId,
+              hasToken: !!token,
+              tokenLength: token?.length
+            });
+            try {
+              const result = await onAuthorizer(channelName, socketId);
+              console.log('Pusher authorizer result:', {
+                success: !!result,
+                hasAuth: !!result?.auth,
+                hasChannelData: !!result?.channel_data
+              });
+              return result;
+            } catch (error) {
+              console.error('Pusher authorizer error:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+              });
+              throw error;
+            }
+          },
           onConnectionStateChange: connectionStateChangeHandler,
           onError: (error) => {
             console.error('Pusher connection error:', {
-              message: error.message,
-              code: error.code,
-              timestamp: new Date().toISOString()
+              message: error?.message,
+              code: error?.code,
+              type: error?.type,
+              data: error?.data,
+              timestamp: new Date().toISOString(),
+              connectionState: pusherClient?.connection?.state,
+              socketId: pusherClient?.connection?.socket_id
             });
             clearTimeout(timeout);
             reject(error);
@@ -180,25 +247,32 @@ export const ChatProvider = ({ children }) => {
         });
         
         // Now actually connect after setting up listeners
+        console.log('Calling pusherClient.connect()...');
         pusherClient.connect();
       });
       
-      console.log('Setting Pusher client instance in state...');
+      console.log('Setting Pusher client instance in state...', {
+        hasClient: !!pusherClient,
+        connectionState: pusherClient?.connection?.state,
+        socketId: pusherClient?.connection?.socket_id
+      });
       setPusherClientInstance(pusherClient);
-      console.log('✅ Pusher client initialized and set in state. Current connection state:', pusherClient?.connection?.state);
       
       // Load chat groups after Pusher initialization
       console.log('Fetching chat groups...');
       fetchChatGroups();
       
     } catch (error) {
-      console.error('❌ Failed to initialize Pusher client:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data,
-        name: error.name,
-        code: error.code
+      console.error('❌ Failed to initialize Pusher client:', {
+        message: error?.message,
+        code: error?.code,
+        type: error?.type,
+        data: error?.data,
+        stack: error?.stack,
+        response: error?.response?.data,
+        name: error?.name,
+        connectionState: pusherClientInstance?.connection?.state,
+        socketId: pusherClientInstance?.connection?.socket_id
       });
       setError('Failed to connect to chat server');
     }

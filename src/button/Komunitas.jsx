@@ -167,18 +167,16 @@ const KomunitasScreen = ({ navigation }) => {
               {communities.map(renderCommunityItem)}
             </View>
 
-            {user?.is_admin === true && (
-              <TouchableOpacity
-                style={styles.makeNewCommunityButton}
-                onPress={handleMakeNewCommunity}
-                activeOpacity={0.7}
-              >
-                <View style={styles.plusIcon}>
-                  <Text style={styles.plusText}>+</Text>
-                </View>
-                <Text style={styles.makeNewCommunityText}>Make new community</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.makeNewCommunityButton}
+              onPress={handleMakeNewCommunity}
+              activeOpacity={0.7}
+            >
+              <View style={styles.plusIcon}>
+                <Text style={styles.plusText}>+</Text>
+              </View>
+              <Text style={styles.makeNewCommunityText}>Make new community</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
