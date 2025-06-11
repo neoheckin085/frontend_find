@@ -5,7 +5,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import Geolocation from '@react-native-community/geolocation';
-import Api, { baseURL } from '../../libs/Api';
+import Api from '../../src/api/Api';
+import API_CONFIG from '../../src/config/apiConfig';
 
 export default function OpenStreetMapScreen() {
   const mapRef = useRef(null);
@@ -18,70 +19,180 @@ export default function OpenStreetMapScreen() {
 
   useEffect(() => {
     const requestLocationPermission = async () => {
-      let permission;
-      if (Platform.OS === 'android') {
-        permission = PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-      } else {
-        permission = PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
-      }
-      const result = await request(permission);
-      if (result === RESULTS.GRANTED) {
-        // Get current location after permission is granted
-        Geolocation.getCurrentPosition(
-          position => {
-            const { latitude, longitude } = position.coords;
-            setCurrentLocation({ latitude, longitude });
+      try {
+        let permission;
+        if (Platform.OS === 'android') {
+          permission = PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+        } else {
+          permission = PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
+        }
+
+        // First check if we already have permission
+        const checkResult = await check(permission);
+        console.log('Location permission check result:', checkResult);
+
+        if (checkResult === RESULTS.GRANTED) {
+          getCurrentLocation();
+        } else {
+          // Request permission if not granted
+          const result = await request(permission);
+          console.log('Location permission request result:', result);
+          
+          if (result === RESULTS.GRANTED) {
+            getCurrentLocation();
+          } else {
+            // If permission denied, use default location
+            console.log('Location permission denied, using default location');
+            setCurrentLocation({ 
+              latitude: -5.150000, 
+              longitude: 119.440000 
+            });
             fetchNearbyCommunities(radius);
-          },
-          error => Alert.alert('Error', 'Could not get your location'),
-          { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+          }
+        }
+      } catch (error) {
+        console.error('Error requesting location permission:', error);
+        Alert.alert(
+          'Location Error',
+          'Could not access location. Using default location instead.',
+          [{ text: 'OK' }]
         );
-      } else {
-        Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
+        // Use default location as fallback
+        setCurrentLocation({ 
+          latitude: -5.150000, 
+          longitude: 119.440000 
+        });
+        fetchNearbyCommunities(radius);
       }
     };
+
+    const getCurrentLocation = () => {
+      console.log('Getting current location...');
+      Geolocation.getCurrentPosition(
+        position => {
+          console.log('Location obtained:', position.coords);
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ latitude, longitude });
+          fetchNearbyCommunities(radius);
+        },
+        error => {
+          console.error('Error getting location:', error);
+          Alert.alert(
+            'Location Error',
+            'Could not get your current location. Using default location instead.',
+            [{ text: 'OK' }]
+          );
+          // Use default location as fallback
+          setCurrentLocation({ 
+            latitude: -5.150000, 
+            longitude: 119.440000 
+          });
+          fetchNearbyCommunities(radius);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 15000, 
+          maximumAge: 10000,
+          forceRequestLocation: true
+        }
+      );
+    };
+
     requestLocationPermission();
   }, []);
 
   const fetchNearbyCommunities = async (radius) => {
     try {
       setLoading(true);
+      console.log('Fetching communities with radius:', radius);
       
-      // Get current position
-      Geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation({ latitude, longitude });
-          
-          console.log('Current location:', { latitude, longitude });
-          
-          // Make API request with current coordinates
-          const response = await Api.get('/getplaces', {
-            params: {
-              latitude,
-              longitude,
-              radius
-            }
+      // Get current position or use fallback
+      const location = currentLocation || { 
+        latitude: -5.150000, 
+        longitude: 119.440000 
+      };
+      
+      console.log('Using location for API request:', location);
+      
+      // Make API request with coordinates
+      const response = await Api.get('/getplaces', {
+        params: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          radius: '100' // Temporarily increase radius to ensure we get all communities
+        }
+      });
+
+      console.log('Full API Response:', JSON.stringify(response.data, null, 2));
+
+      if (response.data.success) {
+        const communitiesData = response.data.data;
+        console.log('=== COMMUNITIES DEBUG INFO ===');
+        console.log('Total communities from API:', communitiesData.length);
+        console.log('Communities details:');
+        communitiesData.forEach((comm, index) => {
+          console.log(`Community ${index + 1}:`, {
+            id: comm.community_id,
+            name: comm.name,
+            lat: comm.latitude,
+            lng: comm.longitude,
+            hasImage: !!comm.gambar,
+            distance: comm.distance, // Log distance if available
+            rawData: comm // Log all raw data
           });
-
-          console.log('API Response:', response.data);
-
-          if (response.data.success) {
-            console.log('Communities data:', response.data.data);
-            setCommunities(response.data.data);
-          }
-          setLoading(false);
-        },
-        (error) => {
-          Alert.alert('Error', 'Could not get your current location');
-          console.error('Error getting location:', error);
-          setLoading(false);
-        },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-      );
+        });
+        console.log('===========================');
+        setCommunities(communitiesData);
+      } else {
+        console.log('API returned success: false');
+        setCommunities([]);
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to fetch nearby communities');
       console.error('Error fetching communities:', error);
+      Alert.alert(
+        'Error',
+        'Failed to fetch nearby communities. Please try again.',
+        [{ text: 'OK' }]
+      );
+      setCommunities([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add debug function to show all communities
+  const showAllCommunities = async () => {
+    try {
+      setLoading(true);
+      const response = await Api.get('/getplaces', {
+        params: {
+          latitude: -5.150000,
+          longitude: 119.440000,
+          radius: '1000' // Very large radius to get all communities
+        }
+      });
+
+      if (response.data.success) {
+        const allCommunities = response.data.data;
+        console.log('=== ALL COMMUNITIES DEBUG ===');
+        console.log('Total communities found:', allCommunities.length);
+        allCommunities.forEach((comm, index) => {
+          console.log(`Community ${index + 1}:`, {
+            id: comm.community_id,
+            name: comm.name,
+            lat: comm.latitude,
+            lng: comm.longitude,
+            hasImage: !!comm.gambar,
+            distance: comm.distance,
+            rawData: comm
+          });
+        });
+        console.log('===========================');
+        setCommunities(allCommunities);
+      }
+    } catch (error) {
+      console.error('Error fetching all communities:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -143,24 +254,15 @@ export default function OpenStreetMapScreen() {
   ]);
 
   const getFullImageUrl = (imagePath) => {
-    if (!imagePath) return null;
+    console.log('getFullImageUrl called with imagePath:', imagePath);
     
-    // If the path is already a full URL, replace localhost with actual IP
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      // Use the storage URL directly
-      const url = imagePath.replace('127.0.0.1:8000', '192.168.100.60:8000');
-      console.log('Original URL:', imagePath);
-      console.log('Modified URL:', url);
-      return url; 
+    if (!imagePath) {
+      console.log('imagePath is undefined or null, returning null');
+      return null;
     }
     
-    // If we have a relative path, construct the storage URL
-    const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
-    // Remove /api from baseURL for storage paths
-    const storageBaseUrl = baseURL.replace('/api', '');
-    const fullUrl = `${storageBaseUrl}/storage/${cleanPath}`;
-    console.log('Constructed storage URL:', fullUrl);
-    return fullUrl;
+    // Use the API_CONFIG helper function to get the storage URL
+    return API_CONFIG.getStorageUrl(imagePath);
   };
 
   // Add console log in the render to check communities state
@@ -175,60 +277,68 @@ export default function OpenStreetMapScreen() {
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
-
         moveOnMarkerPress={false}
       >
         {/* Display markers for all communities */}
         {communities && communities.length > 0 ? (
           communities.map((community) => {
-            console.log('Rendering marker for community:', community);
+            console.log('Processing marker for:', {
+              id: community.community_id,
+              name: community.name,
+              lat: community.latitude,
+              lng: community.longitude,
+              hasImage: !!community.gambar
+            });
+
+            // Validate coordinates
+            const latitude = parseFloat(community.latitude);
+            const longitude = parseFloat(community.longitude);
+            
+            if (isNaN(latitude) || isNaN(longitude)) {
+              console.error('Invalid coordinates for community:', {
+                id: community.community_id,
+                name: community.name,
+                rawLat: community.latitude,
+                rawLng: community.longitude
+              });
+              return null;
+            }
+
             return (
               <Marker
                 key={community.community_id}
                 coordinate={{
-                  latitude: parseFloat(community.latitude),
-                  longitude: parseFloat(community.longitude)
+                  latitude,
+                  longitude
                 }}
                 anchor={{ x: 0.5, y: 1 }}
                 onPress={() => handleMarkerPress(community)}
               >
                 <View style={styles.markerContainer}>
-                    <Image 
-                      source={{ 
-                        uri: getFullImageUrl(community.gambar),
-                        cache: 'reload'
-                      }}
-                      style={styles.markerImage}
-                      onError={(e) => {
-                        console.log('Image loading error:', e.nativeEvent.error);
-                        const imageUrl = getFullImageUrl(community.gambar);
-                        console.log('Failed URL:', imageUrl);
-                        console.log('Community data:', community);
-                        
-                        // Try to fetch the image directly to check if it's accessible
-                        fetch(imageUrl)
-                          .then(response => {
-                            console.log('Fetch response status:', response.status);
-                            console.log('Fetch response headers:', response.headers);
-                            return response.text();
-                          })
-                          .then(text => {
-                            console.log('Response body:', text);
-                          })
-                          .catch(error => {
-                            console.log('Fetch error details:', {
-                              message: error.message,
-                              name: error.name,
-                              stack: error.stack
-                            });
+                    {community.gambar ? (
+                      <Image 
+                        source={{ 
+                          uri: getFullImageUrl(community.gambar),
+                          cache: 'reload'
+                        }}
+                        style={styles.markerImage}
+                        onError={(e) => {
+                          console.error('Image loading error for community:', {
+                            id: community.community_id,
+                            name: community.name,
+                            imageUrl: getFullImageUrl(community.gambar),
+                            error: e.nativeEvent.error
                           });
-                      }}
-                      onLoad={() => console.log('Image loaded successfully')}
-                    />
+                        }}
+                        onLoad={() => console.log('Image loaded successfully for:', community.name)}
+                      />
+                    ) : (
+                      <View style={[styles.markerImage, { backgroundColor: '#ccc' }]} />
+                    )}
                 </View>
               </Marker>
             );
-          })
+          }).filter(Boolean)
         ) : (
           console.log('No communities to display')
         )}
@@ -258,6 +368,13 @@ export default function OpenStreetMapScreen() {
           onChangeText={handleRadiusChange}
           keyboardType="numeric"
         />
+        {/* Debug button */}
+        <TouchableOpacity 
+          style={styles.debugButton}
+          onPress={showAllCommunities}
+        >
+          <Text style={styles.debugButtonText}>Show All</Text>
+        </TouchableOpacity>
       </View>
 
       {loading && (
@@ -409,5 +526,18 @@ const styles = StyleSheet.create({
     left: '50%',
     transform: [{ translateX: -20 }, { translateY: -20 }],
     zIndex: 1,
+  },
+
+  debugButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  
+  debugButtonText: {
+    color: 'white',
+    fontSize: 12,
   },
 });
