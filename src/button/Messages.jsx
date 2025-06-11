@@ -144,44 +144,36 @@ const Messages = ({ route, navigation }) => {
     const isUser = item.user && item.user.user_id === user.user_id;
     const showAvatar = !isUser && (
       index === messages.length - 1 || 
-      messages[index + 1].user?.user_id !== item.user?.user_id
+      messages[index + 1]?.user?.user_id !== item.user?.user_id
     );
-
-    const handleUserPress = () => {
-      if (item.user && item.user.user_id !== user.user_id) {
-        navigation.navigate('UserProfile', { userId: item.user.user_id });
-      }
-    };
 
     return (
       <View style={[
-        styles.messageBubbleContainer,
+        styles.messageContainer,
         isUser ? styles.userMessageContainer : styles.otherMessageContainer
       ]}>
-        {!isUser && (
-          <View style={{ width: 35, marginRight: 8 }}>
-            {showAvatar ? (
-              <TouchableOpacity onPress={handleUserPress}>
-                <Image 
-                  source={getAvatar(item)} 
-                  style={styles.messageAvatar}
-                />
-              </TouchableOpacity>
-            ) : null}
-          </View>
+        {showAvatar && !isUser && (
+          <Image
+            source={getAvatar(item)}
+            style={styles.avatar}
+          />
         )}
         <View style={[
-          styles.chatBubble,
-          isUser ? styles.chatBubbleUser : styles.chatBubbleOther
+          styles.messageBubble,
+          isUser ? styles.userMessageBubble : styles.otherMessageBubble
         ]}>
-          {!isUser && (
-            <TouchableOpacity onPress={handleUserPress}>
-              <Text style={[styles.senderName, styles.senderOther]}>
-                {item.user ? item.user.name : 'Unknown User'}
-              </Text>
-            </TouchableOpacity>
+          {!isUser && showAvatar && (
+            <Text style={styles.senderName}>{item.user?.name || 'Unknown User'}</Text>
           )}
-          <Text style={styles.chatText}>{item.message}</Text>
+          <Text style={[
+            styles.messageText,
+            isUser ? styles.userMessageText : styles.otherMessageText
+          ]}>
+            {item.message}
+          </Text>
+          <Text style={styles.messageTime}>
+            {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
         </View>
       </View>
     );
@@ -293,7 +285,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
   },
-  messageBubbleContainer: {
+  messageContainer: {
     flexDirection: 'row',
     marginVertical: 2,
     marginHorizontal: 8,
@@ -305,27 +297,27 @@ const styles = StyleSheet.create({
   otherMessageContainer: {
     justifyContent: 'flex-start',
   },
-  messageAvatar: {
+  avatar: {
     width: 35,
     height: 35,
     borderRadius: 17.5,
     marginRight: 8,
     backgroundColor: '#E2E2E2',
   },
-  chatBubble: {
+  messageBubble: {
     padding: 8,
     paddingHorizontal: 12,
     marginVertical: 1,
     borderRadius: 15,
     maxWidth: '75%',
   },
-  chatBubbleUser: {
+  userMessageBubble: {
     backgroundColor: '#DCF8C6',
     borderTopRightRadius: 5,
     marginLeft: 40,
     alignSelf: 'flex-end',
   },
-  chatBubbleOther: {
+  otherMessageBubble: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 5,
     borderWidth: 1,
@@ -337,13 +329,16 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     fontWeight: '600',
   },
-  senderOther: {
-    color: '#075E54',
-  },
-  chatText: {
+  messageText: {
     fontSize: 14,
     lineHeight: 20,
     color: '#000000',
+  },
+  userMessageText: {
+    color: '#075E54',
+  },
+  otherMessageText: {
+    color: '#666',
   },
   messagesList: {
     padding: 10,

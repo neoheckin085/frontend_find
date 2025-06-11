@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 const DEV = true; // Set this to false for production
 
 // Konfigurasi IP address sesuai environment
-const IP_ADDRESS = '10.214.57.147'; // Ganti dengan IP address komputer Anda
+const IP_ADDRESS = '192.168.36.61'; // Ganti dengan IP address komputer Anda
 
 // Function to detect if running on emulator
 const isEmulator = () => {

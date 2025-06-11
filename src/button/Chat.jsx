@@ -58,18 +58,29 @@ const ChatList = ({ navigation }) => {
             }}
           />
           <View style={styles.chatInfo}>
-            <Text style={styles.name}>
-              {item.is_private 
-                ? otherUser?.name || 'Unknown User'
-                : item.display_name || item.name}
-            </Text>
-            <Text style={styles.message} numberOfLines={1}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.name}>
+                {item.is_private 
+                  ? otherUser?.name || 'Unknown User'
+                  : item.display_name || item.name}
+              </Text>
+              {item.unread_count > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadCount}>
+                    {item.unread_count > 99 ? '99+' : item.unread_count}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={[
+              styles.message,
+              item.unread_count > 0 && styles.unreadMessage
+            ]} numberOfLines={1}>
               {item.messages && item.messages.length > 0 ? 
                 `${item.messages[0].user?.name || 'User'}: ${item.messages[0].message}` : 
                 'No messages yet'}
             </Text>
           </View>
-          {item.unread_count > 0 && <View style={styles.unreadIndicator} />}
         </View>
       </TouchableOpacity>
     );
@@ -364,6 +375,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
   },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+  },
   name: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -373,11 +390,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  unreadIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  unreadBadge: {
     backgroundColor: '#007bff',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    paddingHorizontal: 6,
+  },
+  unreadCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  unreadMessage: {
+    fontWeight: 'bold',
+    color: '#000',
   },
   chatBubble: {
     padding: 8,

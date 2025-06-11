@@ -318,6 +318,43 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  // Update chat groups when new message is received
+  const handleNewMessage = (messageData) => {
+    if (messageData && messageData.message_id) {
+      // Update messages list if we're in the active chat
+      if (messageData.chat_group_id === activeChat) {
+        setMessages(prev => {
+          if (prev.some(msg => msg.message_id === messageData.message_id)) {
+            return prev;
+          }
+          return [...prev, messageData];
+        });
+      }
+
+      // Update chat groups list with new message and increment unread count
+      setChatGroups(prev => {
+        return prev.map(group => {
+          if (group.chat_group_id === messageData.chat_group_id) {
+            // If this is the active chat, don't increment unread count
+            if (group.chat_group_id === activeChat) {
+              return {
+                ...group,
+                messages: [messageData]
+              };
+            }
+            // Otherwise increment unread count
+            return {
+              ...group,
+              messages: [messageData],
+              unread_count: (group.unread_count || 0) + 1
+            };
+          }
+          return group;
+        });
+      });
+    }
+  };
+
   // Load messages for a specific chat group
   const loadMessages = async (groupId) => {
     setLoading(true);
@@ -370,11 +407,20 @@ export const ChatProvider = ({ children }) => {
         setError('Failed to load messages: Invalid data format.');
       }
 
+      // Update chat groups to reset unread count for this chat
+      setChatGroups(prev => {
+        return prev.map(group => {
+          if (group.chat_group_id === groupId) {
+            return {
+              ...group,
+              unread_count: 0
+            };
+          }
+          return group;
+        });
+      });
+
       setActiveChat(groupId);
-      
-      // Subscribe to the presence channel for this chat group
-      // Moved subscription logic to useEffect that watches activeChat and pusherClientInstance state
-      // subscribeToChat(groupId);
       
     } catch (error) {
       console.error('Failed to load messages:', error);
@@ -386,171 +432,126 @@ export const ChatProvider = ({ children }) => {
 
   // Send a message to the active chat
   const sendMessage = async (message) => {
-    if (!activeChat) return;
+    if (!activeChat) {
+      console.warn('No active chat selected');
+      return null;
+    }
     
     try {
       console.log('Sending message to chat:', activeChat);
       const response = await Api.post(`/chat/groups/${activeChat}/messages`, {
-        message
+        message: message.trim()
       });
       
-      console.log('Message sent successfully:', response.data);
+      if (!response.data || !response.data.message) {
+        console.error('Invalid response format:', response.data);
+        throw new Error('Invalid response from server');
+      }
+
+      const messageData = response.data.message;
+      console.log('Message sent successfully:', messageData);
       
+      // Validate message data before adding to state
+      if (!messageData.message_id || !messageData.message || !messageData.chat_group_id) {
+        console.error('Invalid message data:', messageData);
+        throw new Error('Invalid message data received');
+      }
+
       // Add message immediately for better UX
       setMessages(prev => {
         // Check if message already exists
-        if (prev.some(msg => msg.message_id === response.data.message_id)) {
+        if (prev.some(msg => msg.message_id === messageData.message_id)) {
           return prev;
         }
-        return [...prev, response.data];
+        // Ensure the message has all required fields
+        const newMessage = {
+          ...messageData,
+          user: messageData.user || { user_id: user.user_id, name: user.name },
+          created_at: messageData.created_at || new Date().toISOString()
+        };
+        return [...prev, newMessage];
       });
 
       // If this is a private chat and it's not in the chat list yet, add it
       const chatGroup = chatGroups.find(g => g.chat_group_id === activeChat);
-      if (!chatGroup && response.data.chat_group?.is_private) {
-        // Fetch the chat group details and add to list
-        const groupResponse = await Api.get(`/chat/groups/${activeChat}`);
-        const newGroup = groupResponse.data;
-        // Add the message to the group data
-        newGroup.messages = [response.data];
-        setChatGroups(prev => [...prev, newGroup]);
+      if (!chatGroup && messageData.chat_group?.is_private) {
+        try {
+          // Fetch the chat group details and add to list
+          const groupResponse = await Api.get(`/chat/groups/${activeChat}`);
+          if (groupResponse.data) {
+            const newGroup = {
+              ...groupResponse.data,
+              messages: [messageData]
+            };
+            setChatGroups(prev => [...prev, newGroup]);
+          }
+        } catch (groupError) {
+          console.error('Failed to fetch chat group details:', groupError);
+          // Don't throw here, just log the error
+        }
       }
       
-      return response.data;
+      return messageData;
     } catch (error) {
       console.error('Failed to send message:', error);
-      setError('Failed to send message');
+      let errorMessage = 'Failed to send message';
+      
+      if (error.response) {
+        console.error('Response error:', error.response.data);
+        errorMessage = error.response.data.error || errorMessage;
+      } else if (error.request) {
+        console.error('Request error:', error.request);
+        errorMessage = 'No response from server';
+      } else {
+        console.error('Error:', error.message);
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       return null;
     }
   };
 
   // Subscribe to a chat group's presence channel
   const subscribeToChat = async (groupId) => {
-    console.log('=== Starting Chat Subscription ===');
-    console.log('Initial state:', {
-      hasPusherClient: !!pusherClientInstance,
-      groupId: groupId,
-      pusherState: pusherClientInstance?.connection?.state || 'not initialized'
-    });
-
-    if (!pusherClientInstance) {
-      console.error('❌ Pusher client not initialized - cannot subscribe to chat');
-      return null;
+    if (!pusherClientInstance || !isConnected) {
+      console.warn('Cannot subscribe: Pusher not connected');
+      return;
     }
-    
-    // Add detailed pre-subscription checks
-    console.log('Pre-subscription check before calling subscribe:', {
-      pusherClientInstanceExists: !!pusherClientInstance,
-      pusherClientConnectionState: pusherClientInstance?.connection?.state,
-      tokenExists: !!token,
-      authEndpointUsed: `${API_CONFIG.BASE_URL}/api/broadcasting/auth`,
-      groupId: groupId,
-      channelNameAttempt: `presence-chat.group.${groupId}`
-    });
 
-    console.log('Pusher client is in CONNECTED state (indicated by isConnected state). Proceeding with subscription.');
-    
     try {
-      console.log('Preparing to subscribe to chat group:', groupId);
-      
-      // Use the Pusher client to subscribe to the presence channel
-      const channelName = `presence-chat.group.${groupId}`;
-      console.log('Channel details for subscribe call:', {
-        name: channelName,
-        type: 'presence',
-        groupId: groupId
-      });
-      
-      console.log('Attempting to subscribe with parameters:', {
-        channelName: channelName,
-        // Note: onEvent, onSubscriptionSucceeded, onSubscriptionError callbacks are also implicitly passed.
-      });
-      
-      // Subscribe using the documented pattern
-      const channel = await pusherClientInstance.subscribe({
-        channelName: channelName,
-        onEvent: (event) => {
-          console.log('>>> Raw Channel Event Data <<<', event); // Log all events
-          console.log('=== Channel Event Received ===');
-          console.log('Event Details:', {
-            eventName: event.eventName,
-            channelName: event.channelName,
-            data: event.data,
-            timestamp: new Date().toISOString()
-          });
+      // Unsubscribe from previous channel if exists
+      if (currentChannelRef.current) {
+        await pusherClientInstance.unsubscribe(currentChannelRef.current.name);
+      }
 
+      const channelName = `presence-chat.group.${groupId}`;
+      console.log('Subscribing to channel:', channelName);
+
+      const channel = await pusherClientInstance.subscribe({
+        channelName,
+        onEvent: (event) => {
           if (event.eventName === 'App\\Events\\NewMessage') {
             console.log('New message event received');
             try {
               const data = JSON.parse(event.data);
               console.log('Parsed raw message data from event:', data);
               
-              // Extract the nested message object from the parsed data
-              const messageData = data?.message; 
-              
-              if (messageData && messageData.message_id) { // Ensure it looks like a message object
-                console.log('Processing message data for state update:', {
-                  message_id: messageData.message_id,
-                  message: messageData.message,
-                  userId: messageData.user_id,
-                  groupId: messageData.chat_group_id,
-                  hasUserObject: !!messageData.user // Check if user object exists
-                });
-                
-                setMessages(prev => {
-                  if (prev.some(msg => msg.message_id === messageData.message_id)) {
-                    console.log('Message already exists, not adding duplicate');
-                    return prev;
-                  }
-                  console.log('Adding new message object to state:', { message_id: messageData.message_id });
-                  // Add the extracted messageData object to the state
-                  return [...prev, messageData];
-                });
-              } else {
-                console.warn('No valid message data found in event or data format is unexpected.', messageData);
-              }
+              const messageData = data?.message;
+              handleNewMessage(messageData);
             } catch (error) {
               console.error('Error processing message event:', error);
               console.error('Raw event data:', event.data);
             }
           }
         },
-        onSubscriptionSucceeded: (data) => {
-          console.log('=== Subscription Succeeded ===');
-          console.log('Channel:', channelName);
-          console.log('Data:', data);
-          console.log('Timestamp:', new Date().toISOString());
-          console.log('Pusher client state on subscription success:', pusherClientInstance?.connection?.state);
-        },
-        onSubscriptionError: (error) => {
-          console.error('=== Subscription Error ===');
-          console.error('Channel:', channelName);
-          console.error('Error:', error);
-          console.error('Timestamp:', new Date().toISOString());
-        }
       });
-      
-      console.log('Channel subscription initiated:', {
-        channelName: channelName,
-        hasChannel: !!channel
-      });
-      
-      // Store the channel instance in the ref
-      currentChannelRef.current = channel;
 
-      console.log('✅ Channel subscription process completed.', channelName);
-      return channel;
+      currentChannelRef.current = channel;
+      console.log('Successfully subscribed to channel:', channelName);
     } catch (error) {
-      console.error('❌ Failed to subscribe to chat:', error);
-      console.error('Subscription error details:', {
-        error: error.message,
-        stack: error.stack,
-        groupId: groupId,
-        attemptedChannel: `presence-chat.group.${groupId}`,
-        pusherState: pusherClientInstance?.connection?.state || 'unknown'
-      });
-      setError('Failed to connect to chat channel');
-      return null;
+      console.error('Failed to subscribe to chat channel:', error);
+      setError('Failed to connect to chat');
     }
   };
 
